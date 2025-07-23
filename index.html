@@ -30,8 +30,6 @@
     <!-- React CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Supabase CDN (Changed to unpkg.com) -->
-    <script src="https://unpkg.com/@supabase/supabase-js"></script>
 
     <script type="text/javascript">
         console.log("Script principal começando a carregar.");
@@ -69,51 +67,51 @@
         // Wrap the entire React app rendering logic within window.onload
         window.onload = function() {
             console.log("window.onload disparado.");
+
             // Supabase client initialization
             const SUPABASE_URL = 'https://gfivmnnysomfwrffybeh.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmaXZtbm55c29tZndyZmZ5YmVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyOTY3NjgsImV4cCI6MjA2ODg3Mjc2OH0.NxetXJoCLh4q9zAqn_olimziI3YP4MAJzB8ed4qf8cg';
 
             let supabase;
-            try {
-                console.log("Verificando se o objeto Supabase está disponível antes de criar o cliente:", typeof Supabase);
-                if (typeof Supabase === 'undefined') {
-                    console.error("Erro: Biblioteca Supabase não carregada. Verifique o link CDN.");
-                    // Display a user-friendly error message on the UI
+
+            // Function to initialize Supabase and render the App
+            const initializeSupabaseAndRenderApp = () => {
+                try {
+                    console.log("Tentando inicializar o cliente Supabase...");
+                    supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log("Cliente Supabase inicializado com sucesso.");
+                    ReactDOM.render(React.createElement(App, null), document.getElementById('root'));
+                } catch (e) {
+                    console.error("Erro ao inicializar o cliente Supabase:", e);
                     ReactDOM.render(
                         React.createElement('div', { style: { textAlign: 'center', padding: '20px', color: 'red' } },
-                            React.createElement('h1', null, 'Erro ao Carregar Aplicação'),
-                            React.createElement('p', null, 'A biblioteca Supabase não foi carregada. Por favor, verifique a sua ligação à internet ou o link CDN do Supabase no código HTML.')
+                            React.createElement('h1', null, 'Erro ao Inicializar Supabase'),
+                            React.createElement('p', null, `Ocorreu um erro ao inicializar o cliente Supabase: ${e.message}. Verifique as suas credenciais e a configuração do projeto Supabase.`)
                         ),
                         document.getElementById('root')
                     );
-                    return; // Exit if Supabase is not available
                 }
-                // This check should now always be false as URL is hardcoded
-                if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-                    console.error("Erro: Credenciais do Supabase não configuradas. Por favor, substitua 'YOUR_SUPABASE_URL' no código.");
-                     ReactDOM.render(
-                        React.createElement('div', { style: { textAlign: 'center', padding: '20px', color: 'red' } },
-                            React.createElement('h1', null, 'Erro de Configuração do Supabase'),
-                            React.createElement('p', null, 'A URL do Supabase não foi configurada. Por favor, edite o código HTML e substitua o placeholder pela sua URL real do Supabase.')
-                        ),
-                        document.getElementById('root')
-                    );
-                    return;
-                }
+            };
 
-                supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log("Cliente Supabase inicializado com sucesso.");
-            } catch (e) {
-                console.error("Erro ao inicializar o cliente Supabase:", e);
-                 ReactDOM.render(
+            // Dynamically load Supabase library
+            const supabaseScript = document.createElement('script');
+            supabaseScript.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.0/dist/umd/supabase.min.js";
+            supabaseScript.onload = () => {
+                console.log("Biblioteca Supabase carregada com sucesso.");
+                initializeSupabaseAndRenderApp();
+            };
+            supabaseScript.onerror = (error) => {
+                console.error("Erro ao carregar a biblioteca Supabase:", error);
+                ReactDOM.render(
                     React.createElement('div', { style: { textAlign: 'center', padding: '20px', color: 'red' } },
-                        React.createElement('h1', null, 'Erro ao Inicializar Supabase'),
-                        React.createElement('p', null, `Ocorreu um erro ao inicializar o cliente Supabase: ${e.message}. Verifique as suas credenciais e a configuração do projeto Supabase.`)
+                        React.createElement('h1', null, 'Erro ao Carregar Aplicação'),
+                        React.createElement('p', null, 'A biblioteca Supabase não foi carregada. Por favor, verifique a sua ligação à internet ou o link CDN do Supabase no código HTML.')
                     ),
                     document.getElementById('root')
                 );
-                return;
-            }
+            };
+            document.head.appendChild(supabaseScript);
+
 
             // Global variable for app ID (from Canvas environment, if applicable, otherwise default)
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -1370,7 +1368,7 @@
               );
             }
 
-            ReactDOM.render(React.createElement(App, null), document.getElementById('root'));
+            // ReactDOM.render(React.createElement(App, null), document.getElementById('root')); // This will be called after Supabase loads
         }; // End of window.onload
     </script>
 </body>
