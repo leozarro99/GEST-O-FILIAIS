@@ -78,7 +78,8 @@
             const initializeSupabaseAndRenderApp = () => {
                 try {
                     console.log("Tentando inicializar o cliente Supabase...");
-                    supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    // Corrected: Use 'supabase' (lowercase) as the global object
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                     console.log("Cliente Supabase inicializado com sucesso.");
                     ReactDOM.render(React.createElement(App, null), document.getElementById('root'));
                 } catch (e) {
