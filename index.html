@@ -53,7 +53,8 @@
             Users: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
             Settings: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.78 1.28a2 2 0 0 0 .73 2.73l.04.02a2 2 0 0 1 .97 1.95v.44a2 2 0 0 1-.97 1.95l-.04.02a2 2 0 0 0-.73 2.73l.78 1.28a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.78-1.28a2 2 0 0 0-.73-2.73l-.04-.02a2 2 0 0 1-.97-1.95v-.44a2 2 0 0 1 .97-1.95l.04-.02a2 2 0 0 0 .73-2.73l-.78-1.28a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
             ArrowLeftRight: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-right"><path d="M8 3L4 7L8 11"/><path d="M4 7h16"/><path d="M16 21l4-4l-4-4"/><path d="M20 17H4"/></svg>',
-            ArrowLeft: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>'
+            ArrowLeft: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
+            MapPin: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 18.3a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6z"/><path d="M12 2C7.58 2 4 5.58 4 10c0 5.57 8 12 8 12s8-6.43 8-12c0-4.42-3.58-8-8-8z"/></svg>'
         };
 
         // Helper function to render Lucide icons
@@ -724,6 +725,216 @@
               );
             }
 
+            // Componente para Gerenciamento de Regionais (Novo)
+            function RegionalManagement({ userId }) {
+                const [newRegionalName, setNewRegionalName] = React.useState('');
+                const [availableBranches, setAvailableBranches] = React.useState([]);
+                const [selectedBranches, setSelectedBranches] = React.useState([]);
+                const [regionalsList, setRegionalsList] = React.useState([]);
+                const [error, setError] = React.useState(null);
+
+                React.useEffect(() => {
+                    if (!userId) return;
+
+                    const fetchBranches = async () => {
+                        const { data, error: fetchError } = await supabase
+                            .from('filiais')
+                            .select('name')
+                            .eq('created_by_username', userId)
+                            .order('name', { ascending: true });
+
+                        if (fetchError) {
+                            console.error("Erro ao buscar filiais para regionais no Supabase:", fetchError);
+                            setError("Erro ao carregar filiais. Por favor, recarregue a página.");
+                        } else {
+                            setAvailableBranches(data.map(b => b.name));
+                        }
+                    };
+
+                    const fetchRegionals = async () => {
+                        const { data, error: fetchError } = await supabase
+                            .from('regionais')
+                            .select('*')
+                            .eq('created_by_username', userId)
+                            .order('created_at', { ascending: false });
+
+                        if (fetchError) {
+                            console.error("Erro ao buscar regionais no Supabase:", fetchError);
+                            setError("Erro ao carregar regionais. Por favor, recarregue a página.");
+                        } else {
+                            setRegionalsList(data);
+                        }
+                    };
+
+                    fetchBranches();
+                    fetchRegionals();
+                }, [userId]);
+
+                const handleAddRegional = async (e) => {
+                    e.preventDefault();
+                    if (!newRegionalName.trim()) {
+                        setError("O nome da regional não pode estar vazio.");
+                        return;
+                    }
+                    if (selectedBranches.length === 0) {
+                        setError("Selecione pelo menos uma filial para a regional.");
+                        return;
+                    }
+
+                    try {
+                        const { error: insertError } = await supabase
+                            .from('regionais')
+                            .insert([
+                                { name: newRegionalName.trim(), responsible_branches: selectedBranches, created_by_username: userId }
+                            ]);
+
+                        if (insertError) throw insertError;
+
+                        setNewRegionalName('');
+                        setSelectedBranches([]);
+                        setError(null);
+                        // Re-fetch data to update the list
+                        const { data, error: fetchError } = await supabase
+                            .from('regionais')
+                            .select('*')
+                            .eq('created_by_username', userId)
+                            .order('created_at', { ascending: false });
+                        if (fetchError) console.error("Erro ao re-buscar regionais:", fetchError);
+                        else setRegionalsList(data);
+
+                    } catch (e) {
+                        console.error("Erro ao adicionar regional:", e);
+                        setError("Erro ao adicionar regional. Tente novamente.");
+                    }
+                };
+
+                const handleDeleteRegional = async (id) => {
+                    try {
+                        const { error: deleteError } = await supabase
+                            .from('regionais')
+                            .delete()
+                            .eq('id', id);
+
+                        if (deleteError) throw deleteError;
+
+                        // Re-fetch data to update the list
+                        const { data, error: fetchError } = await supabase
+                            .from('regionais')
+                            .select('*')
+                            .eq('created_by_username', userId)
+                            .order('created_at', { ascending: false });
+                        if (fetchError) console.error("Erro ao re-buscar regionais:", fetchError);
+                        else setRegionalsList(data);
+
+                    } catch (e) {
+                        console.error("Erro ao deletar regional:", e);
+                        setError("Erro ao deletar regional. Tente novamente.");
+                    }
+                };
+
+                const handleBranchSelection = (branchName) => {
+                    setSelectedBranches(prev =>
+                        prev.includes(branchName)
+                            ? prev.filter(name => name !== branchName)
+                            : [...prev, branchName]
+                    );
+                };
+
+                return (
+                    React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg" },
+                        React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4 text-center" }, "Cadastro de Regionais"),
+                        error && (
+                            React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
+                                React.createElement('strong', { className: "font-bold" }, "Erro:"),
+                                React.createElement('span', { className: "block sm:inline" }, " ", error)
+                            )
+                        ),
+                        React.createElement('form', { onSubmit: handleAddRegional, className: "space-y-6 mb-6" },
+                            React.createElement('div', null,
+                                React.createElement('label', { htmlFor: "newRegionalName", className: "block text-sm font-medium text-gray-700 mb-1" }, "Nome da Regional"),
+                                React.createElement('input', {
+                                    type: "text",
+                                    id: "newRegionalName",
+                                    value: newRegionalName,
+                                    onChange: (e) => setNewRegionalName(e.target.value),
+                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                                    placeholder: "Ex: Regional Nordeste",
+                                    required: true
+                                })
+                            ),
+                            React.createElement('div', null,
+                                React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Filiais Responsáveis:"),
+                                React.createElement('div', { className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3" },
+                                    availableBranches.length === 0 ? (
+                                        React.createElement('p', { className: "text-sm text-gray-500 col-span-full" }, "Nenhuma filial disponível. Cadastre filiais primeiro.")
+                                    ) : (
+                                        availableBranches.map(branchName => (
+                                            React.createElement('div', { key: branchName, className: "flex items-center" },
+                                                React.createElement('input', {
+                                                    type: "checkbox",
+                                                    id: `branch-${branchName}`,
+                                                    checked: selectedBranches.includes(branchName),
+                                                    onChange: () => handleBranchSelection(branchName),
+                                                    className: "h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                }),
+                                                React.createElement('label', { htmlFor: `branch-${branchName}`, className: "ml-2 text-sm text-gray-700" }, branchName)
+                                            )
+                                        ))
+                                    )
+                                )
+                            ),
+                            React.createElement('div', { className: "flex justify-center" },
+                                React.createElement('button', {
+                                    type: "submit",
+                                    className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+                                },
+                                    React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" }),
+                                    "Adicionar Regional"
+                                )
+                            )
+                        ),
+                        React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md" },
+                            React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
+                                React.createElement('thead', { className: "bg-gray-50" },
+                                    React.createElement('tr', null,
+                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Regional"),
+                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Filiais Responsáveis"),
+                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Ações")
+                                    )
+                                ),
+                                React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
+                                    regionalsList.length === 0 ? (
+                                        React.createElement('tr', null,
+                                            React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhuma regional cadastrada.")
+                                        )
+                                    ) : (
+                                        regionalsList.map((regional) => (
+                                            React.createElement('tr', { key: regional.id, className: "hover:bg-gray-50" },
+                                                React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, regional.name),
+                                                React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" },
+                                                    regional.responsible_branches && regional.responsible_branches.length > 0
+                                                        ? regional.responsible_branches.join(', ')
+                                                        : 'N/A'
+                                                ),
+                                                React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium" },
+                                                    React.createElement('button', {
+                                                        onClick: () => handleDeleteRegional(regional.id),
+                                                        className: "text-red-600 hover:text-red-900 ml-4",
+                                                        title: "Excluir Regional"
+                                                    },
+                                                        React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5" })
+                                                    )
+                                                )
+                                            )
+                                        ))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+            }
+
             // Componente para Troca de Filial
             function BranchTransfer({ userId, setCurrentPage }) {
               const [plate, setPlate] = React.useState('');
@@ -1316,6 +1527,15 @@
                                     React.createElement(LucideIcon, { name: "Users", className: "mr-3 h-5 w-5" }),
                                     "Usuários"
                                   )
+                                ),
+                                React.createElement('li', { className: "mb-4" },
+                                  React.createElement('button', {
+                                    onClick: () => { setCurrentPage('regionalManagement'); closeSidebar(); }, // New menu item
+                                    className: `flex items-center w-full px-4 py-2 rounded-md transition duration-150 ease-in-out ${currentPage === 'regionalManagement' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`
+                                  },
+                                    React.createElement(LucideIcon, { name: "MapPin", className: "mr-3 h-5 w-5" }), // New icon
+                                    "Regionais"
+                                  )
                                 )
                               )
                             )
@@ -1342,7 +1562,7 @@
                   ),
 
                   React.createElement('div', { className: "flex-1 p-4 flex flex-col items-center" },
-                    React.createElement('header', { className: "w-full max-w-4xl bg-white p-4 rounded-xl shadow-lg mb-8 flex justify-between items-center" },
+                    React.createElement('header', { className: "w-full max-w-full bg-white p-4 rounded-xl shadow-lg mb-8 flex justify-between items-center" },
                       React.createElement('button', { className: "text-gray-700", onClick: toggleSidebar },
                         React.createElement(LucideIcon, { name: "Menu", className: "h-6 w-6" })
                       ),
@@ -1350,18 +1570,19 @@
                     ),
 
                     error && (
-                      React.createElement('div', { className: "max-w-4xl w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
+                      React.createElement('div', { className: "max-w-full w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
                         React.createElement('strong', { className: "font-bold" }, "Erro:"),
                         React.createElement('span', { className: "block sm:inline" }, " ", error)
                       )
                     ),
 
-                    React.createElement('div', { className: "max-w-4xl w-full" },
+                    React.createElement('div', { className: "max-w-full w-full" },
                       currentPage === 'emptyPanel' && React.createElement(EmptyPanel, null),
                       currentPage === 'dashboard' && React.createElement(Dashboard, { userId: userId }),
                       currentPage === 'branchManagement' && userRole === 'administrador' && React.createElement(BranchManagement, { userId: userId }),
                       currentPage === 'equipmentManagement' && userRole === 'administrador' && React.createElement(EquipmentManagement, { userId: userId }),
                       currentPage === 'userManagement' && userRole === 'administrador' && React.createElement(UserManagement, { userId: userId }),
+                      currentPage === 'regionalManagement' && userRole === 'administrador' && React.createElement(RegionalManagement, { userId: userId }), // Pass userId to RegionalManagement
                       currentPage === 'branchTransfer' && React.createElement(BranchTransfer, { userId: userId, setCurrentPage: setCurrentPage })
                     )
                   )
