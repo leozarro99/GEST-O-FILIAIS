@@ -22,13 +22,6 @@
         select::-ms-expand {
             display: none; /* Hide arrow in IE/Edge */
         }
-        /* 3D text shadow effect */
-        .text-shadow-3d {
-            text-shadow:
-                1px 1px 0 #0056b3,  /* Darker blue for first layer */
-                2px 2px 0 #004085,  /* Even darker blue for second layer */
-                3px 3px 0 #002a5a;  /* Darkest blue for third layer */
-        }
     </style>
 </head>
 <body>
@@ -225,10 +218,9 @@
               return (
                 React.createElement('div', { className: "flex items-center justify-center min-h-screen bg-gray-100 font-sans" },
                   React.createElement('div', { className: "bg-white p-8 rounded-xl shadow-lg w-full max-w-md" },
-                    // Truck icon and TERC SISTEMAS title
-                    React.createElement('div', { className: "flex items-center justify-center mb-6" },
-                        React.createElement(LucideIcon, { name: "Truck", className: "h-10 w-10 text-blue-600 mr-3" }),
-                        React.createElement('h2', { className: "text-4xl font-extrabold text-blue-700 text-shadow-3d" }, "TERC SISTEMAS")
+                    // TERC SISTEMAS title - description removed from here
+                    React.createElement('div', { className: "flex flex-col items-center justify-center mb-6" },
+                        React.createElement('h2', { className: "text-4xl font-extrabold text-blue-700 text-center" }, "TERC SISTEMAS")
                     ),
                     error && (
                       React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
@@ -859,7 +851,7 @@
                         disabled: isLoading
                       },
                         isLoading ? (
-                          React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill="none", viewBox="0 0 24 24" },
+                          React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
                             React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
                             React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
                           )
@@ -1113,9 +1105,9 @@
                                     disabled: isLoading
                                 },
                                     isLoading ? (
-                                        React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill="none", viewBox="0 0 24 24" },
-                                            React.createElement('circle', { className: "opacity-25", cx: "12", cy="12" r="10", stroke="currentColor", strokeWidth="4" }),
-                                            React.createElement('path', { className: "opacity-75", fill="currentColor", d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
+                                        React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
+                                            React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
+                                            React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
                                         )
                                     ) : (
                                         React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
@@ -1354,8 +1346,8 @@
                                     disabled: isLoading
                                 },
                                     isLoading ? (
-                                        React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill="none", viewBox="0 0 24 24" },
-                                            React.createElement('circle', { cx: "12", cy="12" r="10", stroke="currentColor", strokeWidth="4" }),
+                                        React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
+                                            React.createElement('circle', { cx: "12", cy="12", r="10", stroke="currentColor", strokeWidth="4" }),
                                             React.createElement('path', { className: "opacity-25", fill="currentColor", d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
                                         )
                                     ) : (
@@ -1410,7 +1402,7 @@
 
             // Componente para Troca de Filial
             function BranchTransfer({ userId, setCurrentPage, showToast }) {
-              const [plate, setPlate] = React.useState('');
+              const [plate, setNewPlate] = React.useState('');
               const [newBranch, setNewBranch] = React.useState('');
               const [executionDate, setExecutionDate] = React.useState('');
               const [branches, setBranches] = React.useState([]);
@@ -1460,7 +1452,7 @@
                   if (insertError) throw insertError;
 
                   showToast("Troca de filial registrada com sucesso!", "success");
-                  setPlate('');
+                  setNewPlate('');
                   setNewBranch('');
                   setExecutionDate('');
                 } catch (e) {
@@ -1502,7 +1494,7 @@
                         type: "text",
                         id: "plate",
                         value: plate,
-                        onChange: (e) => setPlate(e.target.value),
+                        onChange: (e) => setNewPlate(e.target.value),
                         className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
                         placeholder: "Digite a placa do equipamento",
                         required: true,
@@ -1554,8 +1546,8 @@
                     },
                       isLoading ? (
                         React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill="none", viewBox="0 0 24 24" },
-                          React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
-                          React.createElement('path', { className: "opacity-75", fill: "currentColor", d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
+                          React.createElement('circle', { className: "opacity-25", cx: "12", cy="12", r="10", stroke="currentColor", strokeWidth="4" }),
+                          React.createElement('path', { className: "opacity-75", fill="currentColor", d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
                         )
                       ) : (
                         "Registrar Troca"
@@ -1807,8 +1799,8 @@
                         },
                           isLoading ? (
                             React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill="none", viewBox="0 0 24 24" },
-                              React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
-                              React.createElement('path', { className: "opacity-75", fill: "currentColor", d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
+                              React.createElement('circle', { className: "opacity-25", cx: "12", cy="12", r="10", stroke="currentColor", strokeWidth="4" }),
+                              React.createElement('path', { className: "opacity-75", fill="currentColor", d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
                             )
                           ) : (
                             React.createElement(LucideIcon, { name: "Search", className: "mr-2 h-5 w-5" })
@@ -1940,10 +1932,10 @@
               return (
                 React.createElement('div', { className: "flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] bg-white p-6 rounded-xl shadow-lg text-center" },
                   React.createElement('div', { className: "flex items-center justify-center mb-4" },
-                    React.createElement(LucideIcon, { name: "Truck", className: "h-20 w-20 text-blue-600 mr-4" }),
                     React.createElement(LucideIcon, { name: "Building", className: "h-20 w-20 text-gray-500" })
                   ),
-                  React.createElement('h2', { className: "text-4xl font-extrabold text-blue-700 text-shadow-3d" }, "TERC SISTEMAS")
+                  React.createElement('h2', { className: "text-4xl font-extrabold text-blue-700 text-center" }, "TERC SISTEMAS"),
+                  React.createElement('p', { className: "text-base text-gray-600 mt-2 text-center max-w-2xl" }, "O TERC SISTEMAS é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações.")
                 )
               );
             }
