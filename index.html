@@ -626,12 +626,11 @@
                           React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
                             React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
                             React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
-                          )
-                        ) : (
-                          React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
-                        ),
-                        isLoading ? 'Adicionando...' : 'Adicionar Equipamento'
-                      )
+                        )
+                      ) : (
+                        React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
+                      ),
+                      isLoading ? 'Adicionando...' : 'Adicionar Equipamento'
                     )
                   ),
                   React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md" },
@@ -854,12 +853,11 @@
                           React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
                             React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
                             React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
-                          )
-                        ) : (
-                          React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
-                        ),
-                        isLoading ? 'Adicionando...' : 'Adicionar Usuário'
-                      )
+                        )
+                      ) : (
+                        React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
+                      ),
+                      isLoading ? 'Adicionando...' : 'Adicionar Usuário'
                     )
                   ),
                   React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md" },
@@ -1589,10 +1587,18 @@
                   const step = () => {
                       start += increment;
                       if (start < targetCount) {
-                          setAnimatedCounts(prev => ({ ...prev, [type]: Math.ceil(start) }));
+                          setAnimatedCounts(prev => {
+                              const newCounts = { ...prev };
+                              newCounts[type] = Math.ceil(start);
+                              return newCounts;
+                          });
                           requestAnimationFrame(step);
                       } else {
-                          setAnimatedCounts(prev => ({ ...prev, [type]: targetCount }));
+                          setAnimatedCounts(prev => {
+                              const newCounts = { ...prev };
+                              newCounts[type] = targetCount;
+                              return newCounts;
+                          });
                       }
                   };
                   requestAnimationFrame(step);
@@ -1930,12 +1936,32 @@
             // Componente para a tela vazia inicial (agora com visual)
             function EmptyPanel() {
               return (
-                React.createElement('div', { className: "flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] bg-white p-6 rounded-xl shadow-lg text-center" },
+                React.createElement('div', { className: "flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] bg-gray-900 text-white p-6 rounded-xl shadow-lg text-center" },
                   React.createElement('div', { className: "flex items-center justify-center mb-4" },
-                    React.createElement(LucideIcon, { name: "Building", className: "h-20 w-20 text-gray-500" })
+                    React.createElement(LucideIcon, { name: "Building", className: "h-20 w-20 text-gray-400" })
                   ),
-                  React.createElement('h2', { className: "text-4xl font-extrabold text-blue-700 text-center" }, "TERC SISTEMAS"),
-                  React.createElement('p', { className: "text-base text-gray-600 mt-2 text-center max-w-2xl" }, "O TERC SISTEMAS é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações.")
+                  React.createElement('h2', { className: "text-4xl font-extrabold text-yellow-400 text-center mb-2" }, "TERC SISTEMAS"),
+                  React.createElement('p', { className: "text-base text-gray-300 mb-8 text-center max-w-2xl" }, "O TERC SISTEMAS é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações."),
+
+                  React.createElement('h3', { className: "text-2xl font-bold text-yellow-400 text-center mb-6" }, "Nossos Equipamentos e Operações"),
+                  React.createElement('div', { className: "flex flex-wrap justify-center gap-5 mt-10" },
+                    React.createElement('div', { className: "bg-gray-800 rounded-lg p-5 w-72 text-center shadow-xl" },
+                      React.createElement('img', { src: "https://placehold.co/300x200/2c2c2c/ffffff?text=Caminhão+Betoneira+1", alt: "Caminhão betoneira", className: "w-full h-auto rounded-md" }),
+                      React.createElement('div', { className: "mt-2 text-sm text-gray-300" }, "Caminhão Betoneira")
+                    ),
+                    React.createElement('div', { className: "bg-gray-800 rounded-lg p-5 w-72 text-center shadow-xl" },
+                      React.createElement('img', { src: "https://placehold.co/300x200/2c2c2c/ffffff?text=Caminhão+Betoneira+2", alt: "Caminhão betoneira 2", className: "w-full h-auto rounded-md" }),
+                      React.createElement('div', { className: "mt-2 text-sm text-gray-300" }, "Caminhão Betoneira 2")
+                    ),
+                    React.createElement('div', { className: "bg-gray-800 rounded-lg p-5 w-72 text-center shadow-xl" },
+                      React.createElement('img', { src: "https://placehold.co/300x200/2c2c2c/ffffff?text=Usina+de+Concreto", alt: "Usina de Concreto", className: "w-full h-auto rounded-md" }),
+                      React.createElement('div', { className: "mt-2 text-sm text-gray-300" }, "Usina de Concreto")
+                    ),
+                    React.createElement('div', { className: "bg-gray-800 rounded-lg p-5 w-72 text-center shadow-xl" },
+                      React.createElement('img', { src: "https://placehold.co/300x200/2c2c2c/ffffff?text=Caminhão+Braço+Mecânico", alt: "Caminhão com braço mecânico", className: "w-full h-auto rounded-md" }),
+                      React.createElement('div', { className: "mt-2 text-sm text-gray-300" }, "Caminhão com braço mecânico")
+                    )
+                  )
                 )
               );
             }
