@@ -11,6 +11,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Slightly darker background for a professional feel */
         }
         /* Custom styles for select arrow */
         select {
@@ -22,7 +23,22 @@
         select::-ms-expand {
             display: none; /* Hide arrow in IE/Edge */
         }
-        /* 3D text shadow effect - REMOVED FOR TERC SISTEMAS */
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
     </style>
 </head>
 <body>
@@ -52,8 +68,8 @@
             CalendarDays: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>',
             User: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
             Users: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-            Settings: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.78 1.28a2 2 0 0 0 .73 2.73l.04.02a2 2 0 0 1 .97 1.95v.44a2 2 0 0 1-.97 1.95l-.04.02a2 2 0 0 0-.73 2.73l.78 1.28a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.78-1.28a2 2 0 0 0-.73-2.73l-.04-.02a2 2 0 0 1-.97-1.95v-.44a2 2 0 0 1 .97-1.95l-.04-.02a2 2 0 0 0 .73-2.73l-.78-1.28a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
-            ArrowLeftRight: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-right"><path d="M8 3L4 7L8 11"/><path d="M4 7h16"/><path d="M16 21l4-4l-4-4"/><path d="M20 17H4"/></svg>',
+            Settings: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.78 1.28a2 2 0 0 0 .73 2.73l.04.02a2 2 0 0 1 .97 1.95v.44a2 2 0 0 1-.97 1.95l-.04.02a2 2 0 0 0-.73 2.73l.78 1.28a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.78-1.28a2 2 0 0 0-.73-2.73l-.04-.02a2 2 0 0 1-.97-1.95v-.44a2 2 0 0 1 .97-1.95l.04-.02a2 2 0 0 0 .73-2.73l-.78-1.28a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
+            ArrowLeftRight: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucude-arrow-left-right"><path d="M8 3L4 7L8 11"/><path d="M4 7h16"/><path d="M16 21l4-4l-4-4"/><path d="M20 17H4"/></svg>',
             ArrowLeft: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
             MapPin: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 18.3a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6z"/><path d="M12 2C7.58 2 4 5.58 4 10c0 5.57 8 12 8 12s8-6.43 8-12c0-4.42-3.58-8-8-8z"/></svg>',
             Factory: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-factory"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 9.86 2H7.14a2 2 0 0 0-1.66.9l-.82 1.2A2 2 0 0 1 4 6H2v14z"/><path d="M10 10v4"/><path d="M14 10v4"/><path d="M18 10v4"/><path d="M6 10v4"/></svg>'
@@ -80,10 +96,10 @@
             }, [onClose]);
 
             return (
-                React.createElement('div', { className: `fixed bottom-4 right-4 ${bgColor} text-white p-4 rounded-lg shadow-lg flex items-center space-x-2 z-50` },
+                React.createElement('div', { className: `fixed bottom-4 right-4 ${bgColor} text-white p-4 rounded-lg shadow-lg flex items-center space-x-2 z-50 transition-all duration-300 ease-in-out transform translate-y-0 opacity-100` },
                     React.createElement('span', { className: "font-bold text-xl" }, icon),
                     React.createElement('p', null, message),
-                    React.createElement('button', { onClick: onClose, className: "ml-4 font-bold" }, 'X')
+                    React.createElement('button', { onClick: onClose, className: "ml-4 font-bold opacity-75 hover:opacity-100 transition-opacity" }, 'X')
                 )
             );
         }
@@ -91,17 +107,17 @@
         // Componente de Confirmação Modal
         function ConfirmationModal({ message, onConfirm, onCancel }) {
             return (
-                React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" },
-                    React.createElement('div', { className: "bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center" },
-                        React.createElement('p', { className: "text-lg font-semibold mb-4" }, message),
+                React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 animate-fade-in" },
+                    React.createElement('div', { className: "bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center transform scale-95 animate-scale-in" },
+                        React.createElement('p', { className: "text-lg font-semibold text-gray-800 mb-6" }, message),
                         React.createElement('div', { className: "flex justify-center space-x-4" },
                             React.createElement('button', {
                                 onClick: onConfirm,
-                                className: "px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-150 ease-in-out"
+                                className: "px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300 ease-in-out transform hover:scale-105 shadow-md"
                             }, "Confirmar"),
                             React.createElement('button', {
                                 onClick: onCancel,
-                                className: "px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition duration-150 ease-in-out"
+                                className: "px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300 ease-in-out transform hover:scale-105 shadow-md"
                             }, "Cancelar")
                         )
                     )
@@ -221,7 +237,8 @@
                   React.createElement('div', { className: "bg-white p-8 rounded-xl shadow-lg w-full max-w-md" },
                     // TERC SISTEMAS title
                     React.createElement('div', { className: "flex flex-col items-center justify-center mb-6" },
-                        React.createElement('h2', { className: "text-4xl font-extrabold text-blue-700 text-center" }, "TERC SISTEMAS")
+                        React.createElement('h2', { className: "text-4xl font-extrabold text-blue-600 text-center" }, "TERC SISTEMAS")
+                        // Description removed from here
                     ),
                     error && (
                       React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
@@ -237,7 +254,7 @@
                           id: "username",
                           value: username,
                           onChange: (e) => { setUsername(e.target.value); setError(''); },
-                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                           placeholder: "Digite seu usuário",
                           required: true,
                           disabled: isLoggingIn
@@ -250,7 +267,7 @@
                           id: "password",
                           value: password,
                           onChange: (e) => setPassword(e.target.value),
-                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                           placeholder: "Digite sua senha",
                           required: true,
                           disabled: isLoggingIn
@@ -258,7 +275,7 @@
                       ),
                       React.createElement('button', {
                         type: "submit",
-                        className: "w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out",
+                        className: "w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
                         disabled: isLoggingIn
                       },
                         isLoggingIn ? (
@@ -399,14 +416,14 @@
                       type: "text",
                       value: newBranchName,
                       onChange: (e) => setNewBranchName(e.target.value),
-                      className: "flex-grow mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                      className: "flex-grow mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                       placeholder: "Nome da nova filial",
                       required: true,
                       disabled: isLoading
                     }),
                     React.createElement('button', {
                       type: "submit",
-                      className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out",
+                      className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
                       disabled: isLoading
                     },
                       isLoading ? (
@@ -420,12 +437,12 @@
                       isLoading ? 'Adicionando...' : 'Adicionar Filial'
                     )
                   ),
-                  React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md" },
+                  React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
                     React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
-                      React.createElement('thead', { className: "bg-gray-50" },
+                      React.createElement('thead', { className: "bg-gray-100" },
                         React.createElement('tr', null,
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Filial"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Ações")
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Filial"),
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
                         )
                       ),
                       React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
@@ -439,12 +456,12 @@
                           )
                         ) : (
                           branches.map((branch) => (
-                            React.createElement('tr', { key: branch.id, className: "hover:bg-gray-50" },
+                            React.createElement('tr', { key: branch.id, className: "hover:bg-gray-50 transition-colors duration-150" },
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, branch.name),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium" },
                                 React.createElement('button', {
                                   onClick: () => confirmDeleteBranch(branch),
-                                  className: "text-red-600 hover:text-red-900 ml-4",
+                                  className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
                                   title: "Excluir Filial",
                                   disabled: isLoading
                                 },
@@ -595,7 +612,7 @@
                         id: "newPlate",
                         value: newPlate,
                         onChange: (e) => setNewPlate(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                         placeholder: "Ex: ABC-1234",
                         required: true,
                         disabled: isLoading
@@ -607,7 +624,7 @@
                         id: "newEquipmentType",
                         value: newEquipmentType,
                         onChange: (e) => setNewEquipmentType(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                         required: true,
                         disabled: isLoading
                       },
@@ -620,7 +637,7 @@
                     React.createElement('div', { className: "md:col-span-2 flex justify-center" },
                       React.createElement('button', {
                         type: "submit",
-                        className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out",
+                        className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
                         disabled: isLoading
                       },
                         isLoading ? (
@@ -635,13 +652,13 @@
                       )
                     )
                   ),
-                  React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md" },
+                  React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
                     React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
-                      React.createElement('thead', { className: "bg-gray-50" },
+                      React.createElement('thead', { className: "bg-gray-100" },
                         React.createElement('tr', null,
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Placa"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Tipo"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Ações")
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Placa"),
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Tipo"),
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
                         )
                       ),
                       React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
@@ -655,13 +672,13 @@
                           )
                         ) : (
                           equipmentList.map((equipment) => (
-                            React.createElement('tr', { key: equipment.id, className: "hover:bg-gray-50" },
+                            React.createElement('tr', { key: equipment.id, className: "hover:bg-gray-50 transition-colors duration-150" },
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, equipment.plate),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, equipment.type),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium" },
                                 React.createElement('button', {
                                   onClick: () => confirmDeleteEquipment(equipment),
-                                  className: "text-red-600 hover:text-red-900 ml-4",
+                                  className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
                                   title: "Excluir Equipamento",
                                   disabled: isLoading
                                 },
@@ -811,7 +828,7 @@
                         id: "newUsername",
                         value: newUsername,
                         onChange: (e) => setNewUsername(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                         placeholder: "Ex: joao.silva@empresa.com",
                         required: true,
                         disabled: isLoading
@@ -824,7 +841,7 @@
                         id: "newPassword",
                         value: newPassword,
                         onChange: (e) => setNewPassword(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                         placeholder: "Digite a senha",
                         required: true,
                         disabled: isLoading
@@ -836,7 +853,7 @@
                         id: "newUserRole",
                         value: newUserRole,
                         onChange: (e) => setNewUserRole(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                         required: true,
                         disabled: isLoading
                       },
@@ -848,7 +865,7 @@
                     React.createElement('div', { className: "md:col-span-2 flex justify-center" },
                       React.createElement('button', {
                         type: "submit",
-                        className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out",
+                        className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
                         disabled: isLoading
                       },
                         isLoading ? (
@@ -863,13 +880,13 @@
                       )
                     )
                   ),
-                  React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md" },
+                  React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
                     React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
-                      React.createElement('thead', { className: "bg-gray-50" },
+                      React.createElement('thead', { className: "bg-gray-100" },
                         React.createElement('tr', null,
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Usuário"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Função"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Ações")
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Usuário"),
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Função"),
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
                         )
                       ),
                       React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
@@ -883,13 +900,13 @@
                           )
                         ) : (
                           usersList.map((user) => (
-                            React.createElement('tr', { key: user.id, className: "hover:bg-gray-50" },
+                            React.createElement('tr', { key: user.id, className: "hover:bg-gray-50 transition-colors duration-150" },
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, user.username),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize" }, user.role),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium" },
                                 React.createElement('button', {
                                   onClick: () => confirmDeleteUser(user),
-                                  className: "text-red-600 hover:text-red-900 ml-4",
+                                  className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
                                   title: "Excluir Usuário",
                                   disabled: isLoading
                                 },
@@ -1069,7 +1086,7 @@
                                     id: "newRegionalName",
                                     value: newRegionalName,
                                     onChange: (e) => setNewRegionalName(e.target.value),
-                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                                     placeholder: "Ex: Regional Nordeste",
                                     required: true,
                                     disabled: isLoading
@@ -1090,7 +1107,7 @@
                                                     id: `branch-${branchName}`,
                                                     checked: selectedBranches.includes(branchName),
                                                     onChange: () => handleBranchSelection(branchName),
-                                                    className: "h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500",
+                                                    className: "h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 transition duration-150 ease-in-out",
                                                     disabled: isLoading
                                                 }),
                                                 React.createElement('label', { htmlFor: `branch-${branchName}`, className: "ml-2 text-sm text-gray-700" }, branchName)
@@ -1102,7 +1119,7 @@
                             React.createElement('div', { className: "flex justify-center" },
                                 React.createElement('button', {
                                     type: "submit",
-                                    className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out",
+                                    className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
                                     disabled: isLoading
                                 },
                                     isLoading ? (
@@ -1117,13 +1134,13 @@
                                 )
                             )
                         ),
-                        React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md" },
+                        React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
                             React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
-                                React.createElement('thead', { className: "bg-gray-50" },
+                                React.createElement('thead', { className: "bg-gray-100" },
                                     React.createElement('tr', null,
-                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Regional"),
-                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Filiais Responsáveis"),
-                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Ações")
+                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Regional"),
+                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Filiais Responsáveis"),
+                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
                                     )
                                 ),
                                 React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
@@ -1137,7 +1154,7 @@
                                         )
                                     ) : (
                                         regionalsList.map((regional) => (
-                                            React.createElement('tr', { key: regional.id, className: "hover:bg-gray-50" },
+                                            React.createElement('tr', { key: regional.id, className: "hover:bg-gray-50 transition-colors duration-150" },
                                                 React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, regional.name),
                                                 React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" },
                                                     regional.responsible_branches && regional.responsible_branches.length > 0
@@ -1147,7 +1164,7 @@
                                                 React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium" },
                                                     React.createElement('button', {
                                                         onClick: () => confirmDeleteRegional(regional),
-                                                        className: "text-red-600 hover:text-red-900 ml-4",
+                                                        className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
                                                         title: "Excluir Regional",
                                                         disabled: isLoading
                                                     },
@@ -1314,7 +1331,7 @@
                                     id: "newPlantName",
                                     value: newPlantName,
                                     onChange: (e) => setNewPlantName(e.target.value),
-                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                                     placeholder: "Ex: Usina A",
                                     required: true,
                                     disabled: isLoading
@@ -1326,7 +1343,7 @@
                                     id: "selectedBranch",
                                     value: selectedBranch,
                                     onChange: (e) => setSelectedBranch(e.target.value),
-                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                                     required: true,
                                     disabled: isLoading
                                 },
@@ -1343,7 +1360,7 @@
                             React.createElement('div', { className: "flex justify-center" },
                                 React.createElement('button', {
                                     type: "submit",
-                                    className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out",
+                                    className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
                                     disabled: isLoading
                                 },
                                     isLoading ? (
@@ -1358,13 +1375,13 @@
                                 )
                             )
                         ),
-                        React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md" },
+                        React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
                             React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
-                                React.createElement('thead', { className: "bg-gray-50" },
+                                React.createElement('thead', { className: "bg-gray-100" },
                                     React.createElement('tr', null,
-                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Usina"),
-                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Filial Associada"),
-                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Ações")
+                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Usina"),
+                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Filial Associada"),
+                                        React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
                                     )
                                 ),
                                 React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
@@ -1378,13 +1395,13 @@
                                         )
                                     ) : (
                                         plantsList.map((plant) => (
-                                            React.createElement('tr', { key: plant.id, className: "hover:bg-gray-50" },
+                                            React.createElement('tr', { key: plant.id, className: "hover:bg-gray-50 transition-colors duration-150" },
                                                 React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, plant.name),
                                                 React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, plant.branch_name),
                                                 React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium" },
                                                     React.createElement('button', {
                                                         onClick: () => confirmDeletePlant(plant),
-                                                        className: "text-red-600 hover:text-red-900 ml-4",
+                                                        className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
                                                         title: "Excluir Usina",
                                                         disabled: isLoading
                                                     },
@@ -1474,7 +1491,7 @@
                   React.createElement('div', { className: "flex items-center mb-6" },
                     React.createElement('button', {
                       onClick: handleGoBack,
-                      className: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out",
+                      className: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out transform hover:scale-105",
                       disabled: isLoading
                     },
                       React.createElement(LucideIcon, { name: "ArrowLeft", className: "mr-2 h-5 w-5" }),
@@ -1496,7 +1513,7 @@
                         id: "plate",
                         value: plate,
                         onChange: (e) => setNewPlate(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                         placeholder: "Digite a placa do equipamento",
                         required: true,
                         disabled: isLoading
@@ -1509,7 +1526,7 @@
                           id: "newBranch",
                           value: newBranch,
                           onChange: (e) => setNewBranch(e.target.value),
-                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
+                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8 transition duration-150 ease-in-out",
                           required: true,
                           disabled: isLoading
                         },
@@ -1533,7 +1550,7 @@
                           id: "executionDate",
                           value: executionDate,
                           onChange: (e) => setExecutionDate(e.target.value),
-                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                           required: true,
                           disabled: isLoading
                         }),
@@ -1542,7 +1559,7 @@
                     ),
                     React.createElement('button', {
                       type: "submit",
-                      className: "w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out",
+                      className: "w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
                       disabled: isLoading
                     },
                       isLoading ? (
@@ -1752,7 +1769,7 @@
                             id: "startDate",
                             value: startDate,
                             onChange: (e) => setStartDate(e.target.value),
-                            className: "block w-full px-3 py-2 bg-transparent focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                            className: "block w-full px-3 py-2 bg-transparent focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                             disabled: isLoading
                           }),
                           React.createElement(LucideIcon, { name: "CalendarDays", className: "h-5 w-5 text-gray-400 mr-2" })
@@ -1766,7 +1783,7 @@
                             id: "endDate",
                             value: endDate,
                             onChange: (e) => setEndDate(e.target.value),
-                            className: "block w-full px-3 py-2 bg-transparent focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                            className: "block w-full px-3 py-2 bg-transparent focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                             disabled: isLoading
                           }),
                           React.createElement(LucideIcon, { name: "CalendarDays", className: "h-5 w-5 text-gray-400 mr-2" })
@@ -1781,7 +1798,7 @@
                             id: "responsibleUser",
                             value: selectedUser,
                             onChange: (e) => setSelectedUser(e.target.value),
-                            className: "block w-full px-3 py-2 bg-transparent focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
+                            className: "block w-full px-3 py-2 bg-transparent focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8 transition duration-150 ease-in-out",
                             disabled: isLoading
                           },
                             availableUsers.map(user => (
@@ -1795,7 +1812,7 @@
                       React.createElement('div', { className: "md:col-span-3 lg:col-span-1 flex justify-center md:justify-start" },
                         React.createElement('button', {
                           onClick: handleApplyFilters,
-                          className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out w-full md:w-auto",
+                          className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105 w-full md:w-auto",
                           disabled: isLoading
                         },
                           isLoading ? (
@@ -1875,7 +1892,7 @@
                         placeholder: "Buscar registros...",
                         value: searchTerm,
                         onChange: (e) => setSearchTerm(e.target.value),
-                        className: "block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                        className: "block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                         disabled: isLoading
                       }),
                       React.createElement('div', { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" },
@@ -1884,7 +1901,7 @@
                     ),
                     React.createElement('button', {
                       onClick: exportToCSV,
-                      className: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out",
+                      className: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105",
                       disabled: isLoading
                     },
                       React.createElement(LucideIcon, { name: "FileText", className: "mr-2 h-5 w-5" }),
@@ -1892,14 +1909,14 @@
                     )
                   ),
 
-                  React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md" },
+                  React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
                     React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
-                      React.createElement('thead', { className: "bg-gray-50" },
+                      React.createElement('thead', { className: "bg-gray-100" },
                         React.createElement('tr', null,
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Filial"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Placa Antiga"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Placa Nova"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Data Alteração")
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Filial"),
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Placa Antiga"),
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Placa Nova"),
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Data Alteração")
                         )
                       ),
                       React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
@@ -1913,7 +1930,7 @@
                           )
                         ) : (
                           filteredRegistros.map((registro) => (
-                            React.createElement('tr', { key: registro.id, className: "hover:bg-gray-50" },
+                            React.createElement('tr', { key: registro.id, className: "hover:bg-gray-50 transition-colors duration-150" },
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, registro.newBranch),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.plate),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.plate),
@@ -1928,15 +1945,13 @@
               );
             }
 
-            // Componente para a tela vazia inicial (agora com visual e descrição)
+            // Componente para a tela vazia inicial (agora com visual e a descrição)
             function EmptyPanel() {
               return (
                 React.createElement('div', { className: "flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] bg-white p-6 rounded-xl shadow-lg text-center" },
-                  React.createElement('div', { className: "flex items-center justify-center mb-4" },
-                    React.createElement(LucideIcon, { name: "Building", className: "h-20 w-20 text-gray-500" })
-                  ),
-                  React.createElement('h2', { className: "text-4xl font-extrabold text-blue-700 text-center mb-4" }, "TERC SISTEMAS"),
-                  React.createElement('p', { className: "text-lg text-gray-600 max-w-2xl" }, "O TERC SISTEMAS é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações.")
+                  // Removed LucideIcon for 'Building' again
+                  React.createElement('h2', { className: "text-4xl font-extrabold text-blue-600 text-center mb-4" }, "SISTEMA DE GERENCIAMENTO"),
+                  React.createElement('p', { className: "text-lg text-gray-700 mt-4 max-w-2xl leading-relaxed" }, "O SISTEMA DE GERENCIAMENTO é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações.")
                 )
               );
             }
@@ -2021,29 +2036,29 @@
               return (
                 React.createElement('div', { className: "min-h-screen bg-gray-100 font-sans flex" },
                   React.createElement('div', {
-                    className: `fixed inset-y-0 left-0 bg-gray-800 text-white w-64 p-4 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-50`
+                    className: `fixed inset-y-0 left-0 bg-gray-800 text-white w-64 p-4 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-50 rounded-r-xl shadow-lg`
                   },
                     React.createElement('div', { className: "flex items-center justify-between mb-8" },
                       React.createElement('h2', { className: "text-2xl font-bold" }, "Menu"),
-                      React.createElement('button', { className: "text-white", onClick: toggleSidebar },
+                      React.createElement('button', { className: "text-white p-1 rounded-full hover:bg-gray-700 transition-colors", onClick: toggleSidebar },
                         React.createElement(LucideIcon, { name: "X", className: "h-6 w-6" })
                       )
                     ),
                     React.createElement('nav', null,
                       React.createElement('ul', null,
-                        React.createElement('li', { className: "mb-4" },
+                        React.createElement('li', { className: "mb-2" },
                           React.createElement('button', {
                             onClick: () => { setCurrentPage('dashboard'); closeSidebar(); },
-                            className: `flex items-center w-full px-4 py-2 rounded-md transition duration-150 ease-in-out ${currentPage === 'dashboard' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`
+                            className: `flex items-center w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${currentPage === 'dashboard' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-gray-700 text-gray-200'}`
                           },
                             React.createElement(LucideIcon, { name: "LayoutDashboard", className: "mr-3 h-5 w-5" }),
                             "Dashboard"
                           )
                         ),
-                        React.createElement('li', { className: "mb-4" },
+                        React.createElement('li', { className: "mb-2" },
                           React.createElement('button', {
                             onClick: toggleOperacional,
-                            className: `flex items-center justify-between w-full px-4 py-2 rounded-md transition duration-150 ease-in-out ${isOperacionalOpen ? 'bg-blue-700 text-white' : 'hover:bg-gray-700'}`
+                            className: `flex items-center justify-between w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${isOperacionalOpen ? 'bg-gray-700 text-white shadow-md' : 'hover:bg-gray-700 text-gray-200'}`
                           },
                             React.createElement('span', { className: "flex items-center" },
                               React.createElement(LucideIcon, { name: "Settings", className: "mr-3 h-5 w-5" }),
@@ -2056,7 +2071,7 @@
                               React.createElement('li', null,
                                 React.createElement('button', {
                                   onClick: () => { setCurrentPage('branchTransfer'); closeSidebar(); },
-                                  className: `flex items-center w-full px-4 py-2 rounded-md transition duration-150 ease-in-out ${currentPage === 'branchTransfer' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`
+                                  className: `flex items-center w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${currentPage === 'branchTransfer' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-gray-700 text-gray-300'}`
                                 },
                                   React.createElement(LucideIcon, { name: "ArrowLeftRight", className: "mr-3 h-5 w-5" }),
                                   "Troca de Filial"
@@ -2066,10 +2081,10 @@
                           )
                         ),
                         userRole === 'administrador' && (
-                          React.createElement('li', { className: "mb-4" },
+                          React.createElement('li', { className: "mb-2" },
                             React.createElement('button', {
                               onClick: toggleCadastro,
-                              className: `flex items-center justify-between w-full px-4 py-2 rounded-md transition duration-150 ease-in-out ${isCadastroOpen ? 'bg-blue-700 text-white' : 'hover:bg-gray-700'}`
+                              className: `flex items-center justify-between w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${isCadastroOpen ? 'bg-gray-700 text-white shadow-md' : 'hover:bg-gray-700 text-gray-200'}`
                             },
                               React.createElement('span', { className: "flex items-center" },
                                 React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-3 h-5 w-5" }),
@@ -2082,7 +2097,7 @@
                                 React.createElement('li', null,
                                   React.createElement('button', {
                                     onClick: () => { setCurrentPage('branchManagement'); closeSidebar(); },
-                                    className: `flex items-center w-full px-4 py-2 rounded-md transition duration-150 ease-in-out ${currentPage === 'branchManagement' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`
+                                    className: `flex items-center w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${currentPage === 'branchManagement' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-gray-700 text-gray-300'}`
                                   },
                                     React.createElement(LucideIcon, { name: "Building", className: "mr-3 h-5 w-5" }),
                                     "Filiais"
@@ -2091,34 +2106,34 @@
                                 React.createElement('li', null,
                                   React.createElement('button', {
                                     onClick: () => { setCurrentPage('equipmentManagement'); closeSidebar(); },
-                                    className: `flex items-center w-full px-4 py-2 rounded-md transition duration-150 ease-in-out ${currentPage === 'equipmentManagement' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`
+                                    className: `flex items-center w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${currentPage === 'equipmentManagement' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-gray-700 text-gray-300'}`
                                   },
                                     React.createElement(LucideIcon, { name: "Truck", className: "mr-3 h-5 w-5" }),
                                     "Equipamentos"
                                 )
                                 ),
-                                React.createElement('li', { className: "mb-4" },
+                                React.createElement('li', { className: "mb-2" },
                                   React.createElement('button', {
                                     onClick: () => { setCurrentPage('userManagement'); closeSidebar(); },
-                                    className: `flex items-center w-full px-4 py-2 rounded-md transition duration-150 ease-in-out ${currentPage === 'userManagement' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`
+                                    className: `flex items-center w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${currentPage === 'userManagement' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-gray-700 text-gray-300'}`
                                   },
                                     React.createElement(LucideIcon, { name: "Users", className: "mr-3 h-5 w-5" }),
                                     "Usuários"
                                   )
                                 ),
-                                React.createElement('li', { className: "mb-4" },
+                                React.createElement('li', { className: "mb-2" },
                                   React.createElement('button', {
                                     onClick: () => { setCurrentPage('regionalManagement'); closeSidebar(); }, // New menu item
-                                    className: `flex items-center w-full px-4 py-2 rounded-md transition duration-150 ease-in-out ${currentPage === 'regionalManagement' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`
+                                    className: `flex items-center w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${currentPage === 'regionalManagement' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-gray-700 text-gray-300'}`
                                   },
                                     React.createElement(LucideIcon, { name: "MapPin", className: "mr-3 h-5 w-5" }), // New icon
                                     "Regionais"
                                   )
                                 ),
-                                React.createElement('li', { className: "mb-4" },
+                                React.createElement('li', { className: "mb-2" },
                                   React.createElement('button', {
                                     onClick: () => { setCurrentPage('plantManagement'); closeSidebar(); }, // New menu item for Usinas
-                                    className: `flex items-center w-full px-4 py-2 rounded-md transition duration-150 ease-in-out ${currentPage === 'plantManagement' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`
+                                    className: `flex items-center w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${currentPage === 'plantManagement' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-gray-700 text-gray-300'}`
                                   },
                                     React.createElement(LucideIcon, { name: "Factory", className: "mr-3 h-5 w-5" }), // New icon for Usinas
                                     "Usinas"
@@ -2131,7 +2146,7 @@
                         React.createElement('li', { className: "mt-8" },
                           React.createElement('button', {
                             onClick: handleLogout,
-                            className: "flex items-center w-full px-4 py-2 rounded-md text-red-400 hover:bg-gray-700 transition duration-150 ease-in-out"
+                            className: "flex items-center w-full px-4 py-2 rounded-lg text-red-400 hover:bg-gray-700 transition duration-150 ease-in-out"
                           },
                             React.createElement(LucideIcon, { name: "LogOut", className: "mr-3 h-5 w-5" }),
                             "Sair"
@@ -2150,14 +2165,14 @@
 
                   React.createElement('div', { className: "flex-1 p-4 flex flex-col items-center" },
                     React.createElement('header', { className: "w-full max-w-full bg-white p-4 rounded-xl shadow-lg mb-8 flex justify-between items-center" },
-                      React.createElement('button', { className: "text-gray-700", onClick: toggleSidebar },
+                      React.createElement('button', { className: "text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors", onClick: toggleSidebar },
                         React.createElement(LucideIcon, { name: "Menu", className: "h-6 w-6" })
                       ),
-                      React.createElement('h1', { className: "text-3xl font-bold text-gray-800 text-center flex-grow" }, "Sistema de Gerenciamento")
+                      React.createElement('h1', { className: "text-4xl font-extrabold text-blue-600 text-center flex-grow" }, "TERC SISTEMAS")
                     ),
 
                     error && (
-                      React.createElement('div', { className: "max-w-full w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
+                      React.createElement('div', { className: "max-w-full w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 shadow-md", role: "alert" },
                         React.createElement('strong', { className: "font-bold" }, "Erro:"),
                         React.createElement('span', { className: "block sm:inline" }, " ", error)
                       )
