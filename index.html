@@ -302,196 +302,213 @@
             }
 
             // Componente para Gerenciamento de Filiais
-            function BranchManagement({ userId, showToast }) {
-              const [newBranchName, setNewBranchName] = React.useState('');
-              const [branches, setBranches] = React.useState([]);
-              const [error, setError] = React.useState(null);
-              const [isLoading, setIsLoading] = React.useState(false);
-              const [showConfirmModal, setShowConfirmModal] = React.useState(false);
-              const [branchToDelete, setBranchToDelete] = React.useState(null);
+            function BranchManagement({ userId, userRole, showToast }) {
+  const [newBranchName, setNewBranchName] = React.useState('');
+  const [branches, setBranches] = React.useState([]);
+  const [responsibleInput, setResponsibleInput] = React.useState("");
+  const [error, setError] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [showConfirmModal, setShowConfirmModal] = React.useState(false);
+  const [branchToDelete, setBranchToDelete] = React.useState(null);
 
+  React.useEffect(() => {
+    if (!userId || !userRole) return;
 
-              React.useEffect(() => {
-                if (!userId) return;
-                const fetchBranches = async () => {
-                  setIsLoading(true);
-                  const { data, error: fetchError } = await supabase
-                    .from('filiais')
-                    .select('*')
-                    .eq('created_by_username', userId)
-                    .order('created_at', { ascending: false });
+    const fetchBranches = async () => {
+      setIsLoading(true);
 
-                  if (fetchError) {
-                    console.error("Erro ao buscar filiais no Supabase:", fetchError);
-                    setError("Erro ao carregar filiais. Por favor, recarregue a página.");
-                    showToast("Erro ao carregar filiais.", "error");
-                  } else {
-                    setBranches(data);
-                    setError(null);
-                  }
-                  setIsLoading(false);
-                };
-                fetchBranches();
-              }, [userId, showToast]);
+      const query = supabase.from('filiais').select('*').order('created_at', { ascending: false });
 
-              const handleAddBranch = async (e) => {
-                e.preventDefault();
-                if (!newBranchName.trim()) {
-                  setError("O nome da filial não pode estar vazio.");
-                  showToast("O nome da filial não pode estar vazio.", "error");
-                  return;
-                }
-                setIsLoading(true);
-                try {
-                  const { error: insertError } = await supabase
-                    .from('filiais')
-                    .insert([
-                      { name: newBranchName.trim(), created_by_username: userId }
-                    ]);
+      if (userRole === 'supervisor') {
+        query.eq('responsible', userId);
+      }
 
-                  if (insertError) throw insertError;
+      const { data, error: fetchError } = await query;
 
-                  setNewBranchName('');
-                  setError(null);
-                  showToast("Filial adicionada com sucesso!", "success");
-                  // Re-fetch data to update the list
-                  const { data, error: fetchError } = await supabase
-                    .from('filiais')
-                    .select('*')
-                    .eq('created_by_username', userId)
-                    .order('created_at', { ascending: false });
-                  if (fetchError) console.error("Erro ao re-buscar filiais:", fetchError);
-                  else setBranches(data);
+      if (fetchError) {
+        console.error("Erro ao buscar filiais:", fetchError);
+        setError("Erro ao carregar filiais.");
+        showToast("Erro ao carregar filiais.", "error");
+      } else {
+        setBranches(data);
+        setError(null);
+      }
 
-                } catch (e) {
-                  console.error("Erro ao adicionar filial:", e);
-                  setError("Erro ao adicionar filial. Tente novamente.");
-                  showToast("Erro ao adicionar filial.", "error");
-                }
-                setIsLoading(false);
-              };
+      setIsLoading(false);
+    };
 
-              const confirmDeleteBranch = (branch) => {
-                setBranchToDelete(branch);
-                setShowConfirmModal(true);
-              };
+    fetchBranches();
+  }, [userId, userRole, showToast]);
 
-              const handleDeleteBranch = async () => {
-                if (!branchToDelete) return;
+  const handleAddBranch = async (e) => {
+    e.preventDefault();
+    if (!newBranchName.trim()) {
+      setError("O nome da filial não pode estar vazio.");
+      showToast("O nome da filial não pode estar vazio.", "error");
+      return;
+    }
 
-                setIsLoading(true);
-                setShowConfirmModal(false); // Close modal
-                try {
-                  const { error: deleteError } = await supabase
-                    .from('filiais')
-                    .delete()
-                    .eq('id', branchToDelete.id);
+    setIsLoading(true);
+    try {
+      const { error: insertError } = await supabase
+        .from('filiais')
+        .insert([
+          {
+            name: newBranchName.trim(),
+            created_by_username: userId,
+            responsible: responsibleInput || userId,
+          },
+        ]);
 
-                  if (deleteError) throw deleteError;
+      if (insertError) throw insertError;
 
-                  showToast("Filial excluída com sucesso!", "success");
-                  // Re-fetch data to update the list
-                  const { data, error: fetchError } = await supabase
-                    .from('filiais')
-                    .select('*')
-                    .eq('created_by_username', userId)
-                    .order('created_at', { ascending: false });
-                  if (fetchError) console.error("Erro ao re-buscar filiais:", fetchError);
-                  else setBranches(data);
+      setNewBranchName('');
+      setResponsibleInput("");
+      setError(null);
+      showToast("Filial adicionada com sucesso!", "success");
 
-                } catch (e) {
-                  console.error("Erro ao deletar filial:", e);
-                  setError("Erro ao deletar filial. Tente novamente.");
-                  showToast("Erro ao excluir filial.", "error");
-                } finally {
-                    setIsLoading(false);
-                    setBranchToDelete(null);
-                }
-              };
+      const query = supabase.from('filiais').select('*').order('created_at', { ascending: false });
+      if (userRole === 'supervisor') {
+        query.eq('responsible', userId);
+      }
+      const { data } = await query;
+      setBranches(data);
 
-              return (
-                React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg" },
-                  React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4 text-center" }, "Cadastro de Filiais"),
-                  error && (
-                    React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
-                      React.createElement('strong', { className: "font-bold" }, "Erro:"),
-                      React.createElement('span', { className: "block sm:inline" }, " ", error)
-                    )
-                  ),
-                  React.createElement('form', { onSubmit: handleAddBranch, className: "flex flex-col sm:flex-row gap-4 mb-6" },
+    } catch (e) {
+      console.error("Erro ao adicionar filial:", e);
+      setError("Erro ao adicionar filial.");
+      showToast("Erro ao adicionar filial.", "error");
+    }
+
+    setIsLoading(false);
+  };
+
+  const confirmDeleteBranch = (branch) => {
+    setBranchToDelete(branch);
+    setShowConfirmModal(true);
+  };
+
+  const handleDeleteBranch = async () => {
+    if (!branchToDelete) return;
+
+    setIsLoading(true);
+    setShowConfirmModal(false);
+    try {
+      const { error: deleteError } = await supabase
+        .from('filiais')
+        .delete()
+        .eq('id', branchToDelete.id);
+
+      if (deleteError) throw deleteError;
+
+      showToast("Filial excluída com sucesso!", "success");
+
+      const query = supabase.from('filiais').select('*').order('created_at', { ascending: false });
+      if (userRole === 'supervisor') {
+        query.eq('responsible', userId);
+      }
+      const { data } = await query;
+      setBranches(data);
+
+    } catch (e) {
+      console.error("Erro ao excluir filial:", e);
+      setError("Erro ao excluir filial.");
+      showToast("Erro ao excluir filial.", "error");
+    } finally {
+      setIsLoading(false);
+      setBranchToDelete(null);
+    }
+  };
+
+  return (
+    React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg" },
+      React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4 text-center" }, "Cadastro de Filiais"),
+      error && (
+        React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
+          React.createElement('strong', { className: "font-bold" }, "Erro:"),
+          React.createElement('span', { className: "block sm:inline" }, " ", error)
+        )
+      ),
+      React.createElement('form', { onSubmit: handleAddBranch, className: "grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" },
+        React.createElement('input', {
+          type: "text",
+          value: newBranchName,
+          onChange: (e) => setNewBranchName(e.target.value),
+          className: "flex-grow mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
+          placeholder: "Nome da nova filial",
+          className: "col-span-1",
+          required: true,
+          disabled: isLoading
+        }),
+        React.createElement('input', {
+          type: "text",
+          value: responsibleInput,
+          onChange: (e) => setResponsibleInput(e.target.value),
+          className: "col-span-1 mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+          placeholder: "Responsável pela filial"
+        }),
+        React.createElement('button', {
+          type: "submit",
+          className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
+          disabled: isLoading
+        },
+          isLoading ? 'Adicionando...' : 'Adicionar Filial'
+        )
+      ),
+      React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
+        React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
+          React.createElement('thead', { className: "bg-gray-100" },
+            React.createElement('tr', null,
+              React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Filial"),
+              React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Responsável"),
+              React.createElement('th', { className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
+            )
+          ),
+          React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
+            isLoading && branches.length === 0 ? (
+              React.createElement('tr', null,
+                React.createElement('td', { colSpan: "2", className: "px-6 py-4 text-center text-sm text-gray-500" }, "Carregando filiais...")
+              )
+            ) : branches.length === 0 ? (
+              React.createElement('tr', null,
+                React.createElement('td', { colSpan: "2", className: "px-6 py-4 text-center text-sm text-gray-500" }, "Nenhuma filial cadastrada.")
+              )
+            ) : (
+              branches.map((branch) => (
+                React.createElement('tr', { key: branch.id },
+                  React.createElement('td', { className: "px-6 py-4 text-sm font-medium text-gray-900" }, branch.name),
+                  React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" }, branch.responsible),
+                  React.createElement('td', { className: "px-6 py-4 text-right" },
                     React.createElement('input', {
-                      type: "text",
-                      value: newBranchName,
-                      onChange: (e) => setNewBranchName(e.target.value),
-                      className: "flex-grow mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                      placeholder: "Nome da nova filial",
-                      required: true,
+          type: "text",
+          value: responsibleInput,
+          onChange: (e) => setResponsibleInput(e.target.value),
+          className: "col-span-1 mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+          placeholder: "Responsável pela filial"
+        }),
+        React.createElement('button', {
+                      onClick: () => confirmDeleteBranch(branch),
+                      className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
+                      title: "Excluir Filial",
                       disabled: isLoading
-                    }),
-                    React.createElement('button', {
-                      type: "submit",
-                      className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
-                      disabled: isLoading
-                    },
-                      isLoading ? (
-                        React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
-                          React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
-                          React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
-                        )
-                      ) : (
-                        React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
-                      ),
-                      isLoading ? 'Adicionando...' : 'Adicionar Filial'
-                    )
-                  ),
-                  React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
-                    React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
-                      React.createElement('thead', { className: "bg-gray-100" },
-                        React.createElement('tr', null,
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Filial"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
-                        )
-                      ),
-                      React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
-                        isLoading && branches.length === 0 ? (
-                            React.createElement('tr', null,
-                                React.createElement('td', { colSpan: "2", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando filiais...")
-                            )
-                        ) : branches.length === 0 ? (
-                          React.createElement('tr', null,
-                            React.createElement('td', { colSpan: "2", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhuma filial cadastrada.")
-                          )
-                        ) : (
-                          branches.map((branch) => (
-                            React.createElement('tr', { key: branch.id, className: "hover:bg-gray-50 transition-colors duration-150" },
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, branch.name),
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium" },
-                                React.createElement('button', {
-                                  onClick: () => confirmDeleteBranch(branch),
-                                  className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
-                                  title: "Excluir Filial",
-                                  disabled: isLoading
-                                },
-                                  React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5" })
-                                )
-                              )
-                            )
-                          ))
-                        )
-                      )
-                    )
-                  ),
-                  showConfirmModal && React.createElement(ConfirmationModal, {
-                      message: `Tem certeza que deseja excluir a filial "${branchToDelete?.name}"?`,
-                      onConfirm: handleDeleteBranch,
-                      onCancel: () => setShowConfirmModal(false)
-                  })
+                    }, "Excluir")
+                  )
                 )
-              );
-            }
+              ))
+            )
+          )
+        )
+      ),
+      showConfirmModal && React.createElement(ConfirmationModal, {
+        message: `Deseja excluir a filial "${branchToDelete?.name}"?`,
+        onConfirm: handleDeleteBranch,
+        onCancel: () => setShowConfirmModal(false)
+      })
+    )
+  );
+}
 
-            // Componente para Gerenciamento de Equipamentos
-            function EquipmentManagement({ userId, showToast }) {
+function EquipmentManagement({ userId, showToast }) {
               const [newPlate, setNewPlate] = React.useState('');
               const [newEquipmentType, setNewEquipmentType] = React.useState('');
               const [equipmentList, setEquipmentList] = React.useState([]);
