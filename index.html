@@ -715,10 +715,6 @@
                         message: `Tem a certeza que deseja eliminar o equipamento de placa "${equipmentToDelete?.plate}"?`,
                         onConfirm: handleDeleteEquipment,
                         onCancel: React.useCallback(() => setShowConfirmModal(false), []) // Memoize inline function
-                    })
-                )
-            )
-        });
 
         // Novo Componente: Gerenciamento de Utilizadores, memoized
         const UserManagement = React.memo(function UserManagement({ userId, showToast }) {
