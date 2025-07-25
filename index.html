@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Placa App</title>
+    <title>Placa App supabase</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">\
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -62,22 +62,15 @@
     <!-- React CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-    <!-- Firebase CDN -->
+    <!-- supabase CDN -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-        // Global variables for Firebase config and app ID (provided by Canvas environment)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // Substitua com a URL do seu projeto supabase e a chave anon
+        const supabaseUrl = 'https://gfivmnnysomfwrffybeh.supabase.co'; // Ex: 'https://abcdefg.supabase.co'
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmaXZtbm55c29tZndyZmZ5YmVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyOTY3NjgsImV4cCI6MjA2ODg3Mjc2OH0.NxetXJoCLh4q9zAqn_olimziI3YP4MAJzB8ed4qf8cg'; // SUA CHAVE ANON PUBLIC DO supabase.
 
-        // Initialize Firebase app and services
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
         // Helper function to generate Lucide icons
         const icons = {
@@ -154,121 +147,118 @@
             );
         });
 
-        // Firebase Service Utility
-        const FirebaseService = {
-            // Authenticate user with custom token or anonymously
-            authenticate: async () => {
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                    return auth.currentUser;
-                } catch (error) {
-                    console.error("Erro de autenticação Firebase:", error);
-                    throw error;
-                }
+        // supabase Service Utility
+        const SupabaseService = {
+            // Authenticate user with email and password
+            signIn: async (email, password) => {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                return data.user;
+            },
+
+            // Sign up a new user
+            signUp: async (email, password) => {
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                if (error) throw error;
+                return data.user;
+            },
+
+            // Sign out user
+            signOut: async () => {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+            },
+
+            // Get current user's session
+            getSession: async () => {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                return session;
             },
 
             // Get current user's ID
             getCurrentUserId: () => {
-                return auth.currentUser ? auth.currentUser.uid : null;
+                const user = supabase.auth.currentUser;
+                return user ? user.id : null;
             },
 
-            // Get user role from app_users collection
+            // Get user role from app_users table
             getUserRole: async (username) => {
                 try {
-                    const usersRef = collection(db, `artifacts/${appId}/public/data/app_users`);
-                    const q = query(usersRef, where("username", "==", username));
-                    const querySnapshot = await getDocs(q);
-                    if (!querySnapshot.empty) {
-                        return querySnapshot.docs[0].data().role;
+                    const { data, error } = await supabase
+                        .from('app_users')
+                        .select('role')
+                        .eq('username', username)
+                        .limit(1);
+
+                    if (error) throw error;
+                    if (data && data.length > 0) {
+                        return data[0].role;
                     }
                     return null; // User not found or no role
                 } catch (error) {
-                    console.error("Erro ao buscar função do usuário:", error);
+                    console.error("Erro ao buscar função do utilizador no supabase:", error);
                     throw error;
                 }
             },
 
-            // Generic function to listen to a collection
-            listenToCollection: (collectionName, userId, callback, isPublic = false) => {
-                let collectionPath;
-                if (isPublic) {
-                    collectionPath = `artifacts/${appId}/public/data/${collectionName}`;
-                } else {
-                    collectionPath = `artifacts/${appId}/users/${userId}/${collectionName}`;
-                }
-                const q = query(collection(db, collectionPath));
+            // Generic function to listen to a table
+            listenToTable: (tableName, callback, filter = {}) => {
+                const subscription = supabase
+                    .from(tableName)
+                    .on('*', payload => {
+                        // For simplicity, refetch all data on any change
+                        // In a more complex app, you might parse payload.new, payload.old, payload.eventType
+                        SupabaseService.getDocuments(tableName, filter)
+                            .then(callback)
+                            .catch(error => console.error(`Erro ao atualizar dados da tabela ${tableName}:`, error));
+                    })
+                    .subscribe();
 
-                // onSnapshot provides real-time updates
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    callback(data);
-                }, (error) => {
-                    console.error(`Erro ao ouvir a coleção ${collectionName}:`, error);
-                });
-                return unsubscribe;
+                // Initial fetch
+                SupabaseService.getDocuments(tableName, filter)
+                    .then(callback)
+                    .catch(error => console.error(`Erro ao buscar dados iniciais da tabela ${tableName}:`, error));
+
+                return () => {
+                    supabase.removeSubscription(subscription);
+                };
             },
 
-            // Generic function to add a document
-            addDocument: async (collectionName, userId, data, isPublic = false) => {
-                try {
-                    let collectionPath;
-                    if (isPublic) {
-                        collectionPath = `artifacts/${appId}/public/data/${collectionName}`;
-                    } else {
-                        collectionPath = `artifacts/${appId}/users/${userId}/${collectionName}`;
-                    }
-                    await addDoc(collection(db, collectionPath), { ...data, created_by_username: userId, created_at: new Date().toISOString() });
-                } catch (error) {
-                    console.error(`Erro ao adicionar documento à coleção ${collectionName}:`, error);
-                    throw error;
-                }
+            // Generic function to add a document (row)
+            addDocument: async (tableName, data) => {
+                const { error } = await supabase
+                    .from(tableName)
+                    .insert([data]);
+                if (error) throw error;
             },
 
-            // Generic function to delete a document
-            deleteDocument: async (collectionName, userId, docId, isPublic = false) => {
-                try {
-                    let collectionPath;
-                    if (isPublic) {
-                        collectionPath = `artifacts/${appId}/public/data/${collectionName}`;
-                    } else {
-                        collectionPath = `artifacts/${appId}/users/${userId}/${collectionName}`;
-                    }
-                    await deleteDoc(doc(db, collectionPath, docId));
-                } catch (error) {
-                    console.error(`Erro ao deletar documento da coleção ${collectionName}:`, error);
-                    throw error;
-                }
+            // Generic function to delete a document (row)
+            deleteDocument: async (tableName, docId) => {
+                const { error } = await supabase
+                    .from(tableName)
+                    .delete()
+                    .eq('id', docId);
+                if (error) throw error;
             },
 
             // Generic function to get documents once (not real-time)
-            getDocuments: async (collectionName, userId, isPublic = false, filters = []) => {
-                try {
-                    let collectionPath;
-                    if (isPublic) {
-                        collectionPath = `artifacts/${appId}/public/data/${collectionName}`;
-                    } else {
-                        collectionPath = `artifacts/${appId}/users/${userId}/${collectionName}`;
-                    }
-                    let q = query(collection(db, collectionPath));
-                    filters.forEach(filter => {
-                        q = query(q, where(filter.field, filter.operator, filter.value));
-                    });
-                    const querySnapshot = await getDocs(q);
-                    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                } catch (error) {
-                    console.error(`Erro ao buscar documentos da coleção ${collectionName}:`, error);
-                    throw error;
-                }
+            getDocuments: async (tableName, filters = []) => {
+                let query = supabase.from(tableName).select('*');
+
+                filters.forEach(filter => {
+                    query = query.eq(filter.field, filter.value);
+                });
+
+                const { data, error } = await query;
+                if (error) throw error;
+                return data;
             }
         };
 
         // Componente para a tela de Login, memoized
         const LoginPage = React.memo(function LoginPage({ onLogin }) {
-            const [username, setUsername] = React.useState('');
+            const [email, setEmail] = React.useState('');
             const [password, setPassword] = React.useState('');
             const [error, setError] = React.useState('');
             const [isLoggingIn, setIsLoggingIn] = React.useState(false);
@@ -278,43 +268,66 @@
                 setIsLoggingIn(true);
                 setError('');
 
-                if (!username || !password) {
-                    setError('Por favor, insira seu usuário e senha.');
+                if (!email || !password) {
+                    setError('Por favor, insira o seu e-mail e senha.');
                     setIsLoggingIn(false);
                     return;
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+                try {
+                    // Special login for 'admin' user with fixed password
+                    if (email.toLowerCase() === 'admin@tercsistemas.com' && password === '1234') {
+                        // In a real app, you'd have a dedicated admin login or role check after supabase auth
+                        // For this example, we'll simulate an admin login
+                        const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({ email: 'admin@tercsistemas.com', password: '1234' });
+                        if (signInError) throw signInError;
+                        onLogin('administrador', 'admin'); // Pass a fixed username for admin
+                    } else {
+                        const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+                        if (signInError) throw signInError;
 
-                let role = null;
-
-                // Special login for 'admin' user with fixed password
-                if (username.toLowerCase() === 'admin' && password === '1234') {
-                    role = 'administrador';
-                } else {
-                    try {
-                        // Query the public app_users collection for authentication for other users
-                        const users = await FirebaseService.getDocuments('app_users', null, true, [
-                            { field: 'username', operator: '==', value: username.toLowerCase() },
-                            { field: 'password', operator: '==', value: password } // IMPORTANT: In production, hash passwords!
-                        ]);
-
+                        // After successful supabase auth, fetch the user's role from the 'app_users' table
+                        const users = await SupabaseService.getDocuments('app_users', [{ field: 'username', operator: '==', value: email.toLowerCase() }]);
                         if (users && users.length > 0) {
-                            role = users[0].role;
+                            onLogin(users[0].role, users[0].username);
+                        } else {
+                            setError('Utilizador não encontrado ou sem função definida. Por favor, registe-se.');
+                            await SupabaseService.signOut(); // Sign out if user not in app_users
                         }
-                    } catch (e) {
-                        console.error("Erro ao buscar usuário no Firebase:", e);
-                        setError("Erro ao autenticar. Por favor, tente novamente.");
                     }
+                } catch (e) {
+                    console.error("Erro de autenticação supabase:", e);
+                    setError(e.message || "Erro ao autenticar. Por favor, tente novamente.");
+                } finally {
+                    setIsLoggingIn(false);
+                }
+            }, [email, password, onLogin]); // Dependencies for useCallback
+
+            const handleSignUp = React.useCallback(async (e) => {
+                e.preventDefault();
+                setIsLoggingIn(true);
+                setError('');
+
+                if (!email || !password) {
+                    setError('Por favor, insira o seu e-mail e senha para se registar.');
+                    setIsLoggingIn(false);
+                    return;
                 }
 
-                if (role) {
-                    onLogin(role, username); // Pass username as userId for data partitioning
-                } else {
-                    setError('Usuário ou senha inválidos.');
+                try {
+                    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+                    if (signUpError) throw signUpError;
+
+                    // After successful supabase auth, add user to 'app_users' table with default role 'usuario'
+                    await SupabaseService.addDocument('app_users', { username: email.toLowerCase(), password: password, role: 'usuario' }); // IMPORTANT: Hash passwords in production!
+                    onLogin('usuario', email.toLowerCase());
+                } catch (e) {
+                    console.error("Erro de registo supabase:", e);
+                    setError(e.message || "Erro ao registar. Por favor, tente novamente.");
+                } finally {
+                    setIsLoggingIn(false);
                 }
-                setIsLoggingIn(false);
-            }, [username, password, onLogin]); // Dependencies for useCallback
+            }, [email, password, onLogin]);
 
             return (
                 React.createElement('div', { className: "flex items-center justify-center min-h-screen bg-gray-100 font-sans" },
@@ -330,14 +343,14 @@
                         ),
                         React.createElement('form', { onSubmit: handleLogin },
                             React.createElement('div', { className: "mb-4" },
-                                React.createElement('label', { htmlFor: "username", className: "block text-sm font-medium text-gray-700 mb-1" }, "Usuário"),
+                                React.createElement('label', { htmlFor: "email", className: "block text-sm font-medium text-gray-700 mb-1" }, "E-mail"),
                                 React.createElement('input', {
-                                    type: "text",
-                                    id: "username",
-                                    value: username,
-                                    onChange: (e) => { setUsername(e.target.value); setError(''); },
+                                    type: "email",
+                                    id: "email",
+                                    value: email,
+                                    onChange: (e) => { setEmail(e.target.value); setError(''); },
                                     className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                                    placeholder: "Digite seu usuário",
+                                    placeholder: "Digite o seu e-mail",
                                     required: true,
                                     disabled: isLoggingIn
                                 })
@@ -350,25 +363,33 @@
                                     value: password,
                                     onChange: (e) => setPassword(e.target.value),
                                     className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                                    placeholder: "Digite sua senha",
+                                    placeholder: "Digite a sua senha",
                                     required: true,
                                     disabled: isLoggingIn
                                 })
                             ),
                             React.createElement('button', {
                                 type: "submit",
-                                className: "w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
+                                className: "w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105 mb-3",
                                 disabled: isLoggingIn
                             },
                                 isLoggingIn ? (
                                     React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
                                         React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
                                         React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
-                                    )
-                                ) : (
-                                    React.createElement(LucideIcon, { name: "UserCheck", className: "mr-2 h-5 w-5" })
+                                )
+                            ) : (
+                                React.createElement(LucideIcon, { name: "UserCheck", className: "mr-2 h-5 w-5" })
                                 ),
-                                isLoggingIn ? 'Entrando...' : 'Entrar'
+                                isLoggingIn ? 'A entrar...' : 'Entrar'
+                            ),
+                            React.createElement('button', {
+                                type: "button",
+                                onClick: handleSignUp,
+                                className: "w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
+                                disabled: isLoggingIn
+                            },
+                                isLoggingIn ? 'A registar...' : 'Registar'
                             )
                         )
                     )
@@ -385,17 +406,16 @@
             const [showConfirmModal, setShowConfirmModal] = React.useState(false);
             const [branchToDelete, setBranchToDelete] = React.useState(null);
 
-            // Fetch branches in real-time using onSnapshot
+            // Fetch branches in real-time using supabase subscriptions
             React.useEffect(() => {
                 if (!userId) return;
                 setIsLoading(true);
-                const unsubscribe = FirebaseService.listenToCollection('filiais', userId, (data) => {
-                    // Sort data by created_at in descending order
+                const unsubscribe = SupabaseService.listenToTable('filiais', (data) => {
                     const sortedData = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                     setBranches(sortedData);
                     setError(null);
                     setIsLoading(false);
-                });
+                }, [{ field: 'created_by_username', value: userId }]); // Filter by current user's ID
                 return () => unsubscribe(); // Cleanup listener on component unmount
             }, [userId]); // Dependency array includes userId
 
@@ -408,7 +428,7 @@
                 }
                 setIsLoading(true);
                 try {
-                    await FirebaseService.addDocument('filiais', userId, { name: newBranchName.trim() });
+                    await SupabaseService.addDocument('filiais', { name: newBranchName.trim(), created_by_username: userId });
                     setNewBranchName('');
                     setError(null);
                     showToast("Filial adicionada com sucesso!", "success");
@@ -432,17 +452,17 @@
                 setIsLoading(true);
                 setShowConfirmModal(false); // Close modal
                 try {
-                    await FirebaseService.deleteDocument('filiais', userId, branchToDelete.id);
-                    showToast("Filial excluída com sucesso!", "success");
+                    await SupabaseService.deleteDocument('filiais', branchToDelete.id);
+                    showToast("Filial eliminada com sucesso!", "success");
                 } catch (e) {
-                    console.error("Erro ao deletar filial:", e);
-                    setError("Erro ao deletar filial. Tente novamente.");
-                    showToast("Erro ao excluir filial.", "error");
+                    console.error("Erro ao eliminar filial:", e);
+                    setError("Erro ao eliminar filial. Tente novamente.");
+                    showToast("Erro ao eliminar filial.", "error");
                 } finally {
                     setIsLoading(false);
                     setBranchToDelete(null);
                 }
-            }, [branchToDelete, userId, showToast]); // Dependencies for useCallback
+            }, [branchToDelete, showToast]); // Dependencies for useCallback
 
             return (
                 React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg" },
@@ -476,7 +496,7 @@
                             ) : (
                                 React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
                             ),
-                            isLoading ? 'Adicionando...' : 'Adicionar Filial'
+                            isLoading ? 'A adicionar...' : 'Adicionar Filial'
                         )
                     ),
                     React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
@@ -490,11 +510,11 @@
                             React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
                                 isLoading && branches.length === 0 ? (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "2", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando filiais...")
+                                        React.createElement('td', { colSpan: "2", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "A carregar filiais...")
                                     )
                                 ) : branches.length === 0 ? (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "2", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhuma filial cadastrada.")
+                                        React.createElement('td', { colSpan: "2", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhuma filial registada.")
                                     )
                                 ) : (
                                     branches.map((branch) => (
@@ -504,7 +524,7 @@
                                                 React.createElement('button', {
                                                     onClick: () => confirmDeleteBranch(branch),
                                                     className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
-                                                    title: "Excluir Filial",
+                                                    title: "Eliminar Filial",
                                                     disabled: isLoading
                                                 },
                                                     React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5" })
@@ -517,7 +537,7 @@
                         )
                     ),
                     showConfirmModal && React.createElement(ConfirmationModal, {
-                        message: `Tem certeza que deseja excluir a filial "${branchToDelete?.name}"?`,
+                        message: `Tem a certeza que deseja eliminar a filial "${branchToDelete?.name}"?`,
                         onConfirm: handleDeleteBranch,
                         onCancel: React.useCallback(() => setShowConfirmModal(false), []) // Memoize inline function
                     })
@@ -537,16 +557,16 @@
 
             const equipmentTypes = ["BOMBA LANÇA", "BOMBA", "BETONEIRA"];
 
-            // Fetch equipment in real-time using onSnapshot
+            // Fetch equipment in real-time using supabase subscriptions
             React.useEffect(() => {
                 if (!userId) return;
                 setIsLoading(true);
-                const unsubscribe = FirebaseService.listenToCollection('equipamentos', userId, (data) => {
+                const unsubscribe = SupabaseService.listenToTable('equipamentos', (data) => {
                     const sortedData = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                     setEquipmentList(sortedData);
                     setError(null);
                     setIsLoading(false);
-                });
+                }, [{ field: 'created_by_username', value: userId }]); // Filter by current user's ID
                 return () => unsubscribe(); // Cleanup listener on component unmount
             }, [userId]); // Dependency array includes userId
 
@@ -559,7 +579,7 @@
                 }
                 setIsLoading(true);
                 try {
-                    await FirebaseService.addDocument('equipamentos', userId, { plate: newPlate.trim(), type: newEquipmentType });
+                    await SupabaseService.addDocument('equipamentos', { plate: newPlate.trim(), type: newEquipmentType, created_by_username: userId });
                     setNewPlate('');
                     setNewEquipmentType('');
                     setError(null);
@@ -584,17 +604,17 @@
                 setIsLoading(true);
                 setShowConfirmModal(false); // Close modal
                 try {
-                    await FirebaseService.deleteDocument('equipamentos', userId, equipmentToDelete.id);
-                    showToast("Equipamento excluído com sucesso!", "success");
+                    await SupabaseService.deleteDocument('equipamentos', equipmentToDelete.id);
+                    showToast("Equipamento eliminado com sucesso!", "success");
                 } catch (e) {
-                    console.error("Erro ao deletar equipamento:", e);
-                    setError("Erro ao deletar equipamento. Tente novamente.");
-                    showToast("Erro ao excluir equipamento.", "error");
+                    console.error("Erro ao eliminar equipamento:", e);
+                    setError("Erro ao eliminar equipamento. Tente novamente.");
+                    showToast("Erro ao eliminar equipamento.", "error");
                 } finally {
                     setIsLoading(false);
                     setEquipmentToDelete(null);
                 }
-            }, [equipmentToDelete, userId, showToast]); // Dependencies for useCallback
+            }, [equipmentToDelete, showToast]); // Dependencies for useCallback
 
             return (
                 React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg" },
@@ -645,12 +665,11 @@
                                     React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
                                         React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
                                         React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
-                                    )
-                                ) : (
-                                    React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
-                                ),
-                                isLoading ? 'Adicionando...' : 'Adicionar Equipamento'
-                            )
+                                )
+                            ) : (
+                                React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
+                            ),
+                            isLoading ? 'A adicionar...' : 'Adicionar Equipamento'
                         )
                     ),
                     React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
@@ -665,11 +684,11 @@
                             React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
                                 isLoading && equipmentList.length === 0 ? (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando equipamentos...")
+                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "A carregar equipamentos...")
                                     )
                                 ) : equipmentList.length === 0 ? (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum equipamento cadastrado.")
+                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum equipamento registado.")
                                     )
                                 ) : (
                                     equipmentList.map((equipment) => (
@@ -680,7 +699,7 @@
                                                 React.createElement('button', {
                                                     onClick: () => confirmDeleteEquipment(equipment),
                                                     className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
-                                                    title: "Excluir Equipamento",
+                                                    title: "Eliminar Equipamento",
                                                     disabled: isLoading
                                                 },
                                                     React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5" })
@@ -693,7 +712,7 @@
                         )
                     ),
                     showConfirmModal && React.createElement(ConfirmationModal, {
-                        message: `Tem certeza que deseja excluir o equipamento de placa "${equipmentToDelete?.plate}"?`,
+                        message: `Tem a certeza que deseja eliminar o equipamento de placa "${equipmentToDelete?.plate}"?`,
                         onConfirm: handleDeleteEquipment,
                         onCancel: React.useCallback(() => setShowConfirmModal(false), []) // Memoize inline function
                     })
@@ -701,7 +720,7 @@
             );
         });
 
-        // Novo Componente: Gerenciamento de Usuários, memoized
+        // Novo Componente: Gerenciamento de Utilizadores, memoized
         const UserManagement = React.memo(function UserManagement({ userId, showToast }) {
             const [newUsername, setNewUsername] = React.useState('');
             const [newPassword, setNewPassword] = React.useState('');
@@ -714,43 +733,55 @@
 
             const roles = ['administrador', 'supervisor', 'usuario'];
 
-            // Fetch users in real-time using onSnapshot (public collection)
+            // Fetch users in real-time using supabase subscriptions (public table)
             React.useEffect(() => {
-                if (!userId) return; // userId here refers to the logged-in username, but for public data, it's not used in the path
+                if (!userId) return;
                 setIsLoading(true);
-                const unsubscribe = FirebaseService.listenToCollection('app_users', null, (data) => {
+                const unsubscribe = SupabaseService.listenToTable('app_users', (data) => {
                     const sortedData = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                     setUsersList(sortedData);
                     setError(null);
                     setIsLoading(false);
-                }, true); // isPublic = true
+                }); // No filter needed for public table
                 return () => unsubscribe(); // Cleanup listener on component unmount
             }, [userId]); // Dependency array includes userId
 
             const handleAddUser = React.useCallback(async (e) => {
                 e.preventDefault();
                 if (!newUsername.trim() || !newPassword.trim()) {
-                    setError("Por favor, preencha o nome de usuário e a senha.");
-                    showToast("Preencha o nome de usuário e a senha.", "error");
+                    setError("Por favor, preencha o nome de utilizador e a senha.");
+                    showToast("Preencha o nome de utilizador e a senha.", "error");
                     return;
                 }
                 setIsLoading(true);
                 try {
-                    // Add user to public app_users collection
-                    await FirebaseService.addDocument('app_users', userId, { username: newUsername.trim(), password: newPassword, role: newUserRole }, true); // isPublic = true
+                    // Register user with supabase Auth
+                    const { data: authData, error: authError } = await supabase.auth.signUp({
+                        email: newUsername.trim(), // Using username as email for supabase Auth
+                        password: newPassword
+                    });
+                    if (authError) throw authError;
+
+                    // Add user details to 'app_users' table
+                    await SupabaseService.addDocument('app_users', {
+                        id: authData.user.id, // Use supabase Auth UID as primary key for app_users
+                        username: newUsername.trim(),
+                        password: newPassword, // IMPORTANT: Hash passwords in production!
+                        role: newUserRole
+                    });
                     setNewUsername('');
                     setNewPassword('');
                     setNewUserRole('usuario');
                     setError(null);
-                    showToast("Usuário adicionado com sucesso!", "success");
+                    showToast("Utilizador adicionado com sucesso!", "success");
                 } catch (e) {
-                    console.error("Erro ao adicionar usuário:", e);
-                    setError("Erro ao adicionar usuário. Tente novamente.");
-                    showToast("Erro ao adicionar usuário.", "error");
+                    console.error("Erro ao adicionar utilizador:", e);
+                    setError(e.message || "Erro ao adicionar utilizador. Tente novamente.");
+                    showToast("Erro ao adicionar utilizador.", "error");
                 } finally {
                     setIsLoading(false);
                 }
-            }, [newUsername, newPassword, newUserRole, userId, showToast]); // Dependencies for useCallback
+            }, [newUsername, newPassword, newUserRole, showToast]); // Dependencies for useCallback
 
             const confirmDeleteUser = React.useCallback((user) => {
                 setUserToDelete(user);
@@ -763,22 +794,26 @@
                 setIsLoading(true);
                 setShowConfirmModal(false); // Close modal
                 try {
-                    // Delete user from public app_users collection
-                    await FirebaseService.deleteDocument('app_users', userId, userToDelete.id, true); // isPublic = true
-                    showToast("Usuário excluído com sucesso!", "success");
+                    // Delete user from 'app_users' table
+                    await SupabaseService.deleteDocument('app_users', userToDelete.id);
+                    // Optionally, delete from supabase Auth as well if this is the only place managing users
+                    // const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userToDelete.id);
+                    // if (authDeleteError) console.error("Erro ao eliminar utilizador do supabase Auth:", authDeleteError);
+
+                    showToast("Utilizador eliminado com sucesso!", "success");
                 } catch (e) {
-                    console.error("Erro ao deletar usuário:", e);
-                    setError("Erro ao deletar usuário. Tente novamente.");
-                    showToast("Erro ao excluir usuário.", "error");
+                    console.error("Erro ao eliminar utilizador:", e);
+                    setError("Erro ao eliminar utilizador. Tente novamente.");
+                    showToast("Erro ao eliminar utilizador.", "error");
                 } finally {
                     setIsLoading(false);
                     setUserToDelete(null);
                 }
-            }, [userToDelete, userId, showToast]); // Dependencies for useCallback
+            }, [userToDelete, showToast]); // Dependencies for useCallback
 
             return (
                 React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg" },
-                    React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4 text-center" }, "Cadastro de Usuários"),
+                    React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4 text-center" }, "Cadastro de Utilizadores"),
                     error && (
                         React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
                             React.createElement('strong', { className: "font-bold" }, "Erro:"),
@@ -787,9 +822,9 @@
                     ),
                     React.createElement('form', { onSubmit: handleAddUser, className: "grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" },
                         React.createElement('div', null,
-                            React.createElement('label', { htmlFor: "newUsername", className: "block text-sm font-medium text-gray-700 mb-1" }, "Nome de Usuário"),
+                            React.createElement('label', { htmlFor: "newUsername", className: "block text-sm font-medium text-gray-700 mb-1" }, "Nome de Utilizador (E-mail)"),
                             React.createElement('input', {
-                                type: "text",
+                                type: "email",
                                 id: "newUsername",
                                 value: newUsername,
                                 onChange: (e) => setNewUsername(e.target.value),
@@ -837,19 +872,18 @@
                                     React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
                                         React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
                                         React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
-                                    )
-                                ) : (
-                                    React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
-                                ),
-                                isLoading ? 'Adicionando...' : 'Adicionar Usuário'
-                            )
+                                )
+                            ) : (
+                                React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
+                            ),
+                            isLoading ? 'A adicionar...' : 'Adicionar Utilizador'
                         )
                     ),
                     React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
                         React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
                             React.createElement('thead', { className: "bg-gray-100" },
                                 React.createElement('tr', null,
-                                    React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Usuário"),
+                                    React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Utilizador (E-mail)"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Função"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
                                 )
@@ -857,11 +891,11 @@
                             React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
                                 isLoading && usersList.length === 0 ? (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando usuários...")
+                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "A carregar utilizadores...")
                                     )
                                 ) : usersList.length === 0 ? (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum usuário cadastrado.")
+                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum utilizador registado.")
                                     )
                                 ) : (
                                     usersList.map((user) => (
@@ -872,7 +906,7 @@
                                                 React.createElement('button', {
                                                     onClick: () => confirmDeleteUser(user),
                                                     className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
-                                                    title: "Excluir Usuário",
+                                                    title: "Eliminar Utilizador",
                                                     disabled: isLoading
                                                 },
                                                     React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5" })
@@ -885,7 +919,7 @@
                         )
                     ),
                     showConfirmModal && React.createElement(ConfirmationModal, {
-                        message: `Tem certeza que deseja excluir o usuário "${userToDelete?.username}"?`,
+                        message: `Tem a certeza que deseja eliminar o utilizador "${userToDelete?.username}"?`,
                         onConfirm: handleDeleteUser,
                         onCancel: React.useCallback(() => setShowConfirmModal(false), []) // Memoize inline function
                     })
@@ -911,19 +945,19 @@
                 setIsLoading(true);
 
                 // Listen to branches
-                const unsubscribeBranches = FirebaseService.listenToCollection('filiais', userId, (data) => {
+                const unsubscribeBranches = SupabaseService.listenToTable('filiais', (data) => {
                     const sortedData = data.sort((a, b) => a.name.localeCompare(b.name));
                     setAvailableBranches(sortedData.map(b => b.name));
                     setError(null);
-                });
+                }, [{ field: 'created_by_username', value: userId }]); // Filter by current user's ID
 
                 // Listen to regionals
-                const unsubscribeRegionals = FirebaseService.listenToCollection('regionais', userId, (data) => {
+                const unsubscribeRegionals = SupabaseService.listenToTable('regionais', (data) => {
                     const sortedData = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                     setRegionalsList(sortedData);
                     setError(null);
                     setIsLoading(false);
-                });
+                }, [{ field: 'created_by_username', value: userId }]); // Filter by current user's ID
 
                 return () => {
                     unsubscribeBranches();
@@ -946,7 +980,7 @@
 
                 setIsLoading(true);
                 try {
-                    await FirebaseService.addDocument('regionais', userId, { name: newRegionalName.trim(), responsible_branches: selectedBranches });
+                    await SupabaseService.addDocument('regionais', { name: newRegionalName.trim(), responsible_branches: selectedBranches, created_by_username: userId });
                     setNewRegionalName('');
                     setSelectedBranches([]);
                     setError(null);
@@ -971,17 +1005,17 @@
                 setIsLoading(true);
                 setShowConfirmModal(false); // Close modal
                 try {
-                    await FirebaseService.deleteDocument('regionais', userId, regionalToDelete.id);
-                    showToast("Regional excluída com sucesso!", "success");
+                    await SupabaseService.deleteDocument('regionais', regionalToDelete.id);
+                    showToast("Regional eliminada com sucesso!", "success");
                 } catch (e) {
-                    console.error("Erro ao deletar regional:", e);
-                    setError("Erro ao deletar regional. Tente novamente.");
-                    showToast("Erro ao excluir regional.", "error");
+                    console.error("Erro ao eliminar regional:", e);
+                    setError("Erro ao eliminar regional. Tente novamente.");
+                    showToast("Erro ao eliminar regional.", "error");
                 } finally {
                     setIsLoading(false);
                     setRegionalToDelete(null);
                 }
-            }, [regionalToDelete, userId, showToast]); // Dependencies for useCallback
+            }, [regionalToDelete, showToast]); // Dependencies for useCallback
 
             const handleBranchSelection = React.useCallback((branchName) => {
                 setSelectedBranches(prev =>
@@ -1018,9 +1052,9 @@
                             React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Filiais Responsáveis:"),
                             React.createElement('div', { className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3" },
                                 isLoading && availableBranches.length === 0 ? (
-                                    React.createElement('p', { className: "text-sm text-gray-500 col-span-full" }, "Carregando filiais...")
+                                    React.createElement('p', { className: "text-sm text-gray-500 col-span-full" }, "A carregar filiais...")
                                 ) : availableBranches.length === 0 ? (
-                                    React.createElement('p', { className: "text-sm text-gray-500 col-span-full" }, "Nenhuma filial disponível. Cadastre filiais primeiro.")
+                                    React.createElement('p', { className: "text-sm text-gray-500 col-span-full" }, "Nenhuma filial disponível. Registe filiais primeiro.")
                                 ) : (
                                     availableBranches.map(branchName => (
                                         React.createElement('div', { key: branchName, className: "flex items-center" },
@@ -1047,12 +1081,12 @@
                                 isLoading ? (
                                     React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
                                         React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
-                                        React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
+                                        React.createElement('path', { className: "opacity-75", fill: "currentColor", d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
                                     )
                                 ) : (
                                     React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
                                 ),
-                                isLoading ? 'Adicionando...' : 'Adicionar Regional'
+                                isLoading ? 'A adicionar...' : 'Adicionar Regional'
                             )
                         )
                     ),
@@ -1068,11 +1102,11 @@
                             React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
                                 isLoading && regionalsList.length === 0 ? (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando regionais...")
+                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "A carregar regionais...")
                                     )
                                 ) : regionalsList.length === 0 ? (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhuma regional cadastrada.")
+                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhuma regional registada.")
                                     )
                                 ) : (
                                     regionalsList.map((regional) => (
@@ -1087,7 +1121,7 @@
                                                 React.createElement('button', {
                                                     onClick: () => confirmDeleteRegional(regional),
                                                     className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
-                                                    title: "Excluir Regional",
+                                                    title: "Eliminar Regional",
                                                     disabled: isLoading
                                                 },
                                                     React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5" })
@@ -1100,207 +1134,8 @@
                         )
                     ),
                     showConfirmModal && React.createElement(ConfirmationModal, {
-                        message: `Tem certeza que deseja excluir a regional "${regionalToDelete?.name}"?`,
+                        message: `Tem a certeza que deseja eliminar a regional "${regionalToDelete?.name}"?`,
                         onConfirm: handleDeleteRegional,
-                        onCancel: React.useCallback(() => setShowConfirmModal(false), []) // Memoize inline function
-                    })
-                )
-            );
-        });
-
-        // Novo Componente: Gerenciamento de Usinas (Plants), memoized
-        const PlantManagement = React.memo(function PlantManagement({ userId, showToast }) {
-            const [newPlantName, setNewPlantName] = React.useState('');
-            const [selectedBranch, setSelectedBranch] = React.useState('');
-            const [availableBranches, setAvailableBranches] = React.useState([]);
-            const [plantsList, setPlantsList] = React.useState([]);
-            const [error, setError] = React.useState(null);
-            const [isLoading, setIsLoading] = React.useState(false);
-            const [showConfirmModal, setShowConfirmModal] = React.useState(false);
-            const [plantToDelete, setPlantToDelete] = React.useState(null);
-
-            // Fetch branches and plants in real-time
-            React.useEffect(() => {
-                if (!userId) return;
-
-                setIsLoading(true);
-
-                // Listen to branches
-                const unsubscribeBranches = FirebaseService.listenToCollection('filiais', userId, (data) => {
-                    const sortedData = data.sort((a, b) => a.name.localeCompare(b.name));
-                    setAvailableBranches(sortedData.map(b => b.name));
-                    setError(null);
-                });
-
-                // Listen to plants
-                const unsubscribePlants = FirebaseService.listenToCollection('usinas', userId, (data) => {
-                    const sortedData = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                    setPlantsList(sortedData);
-                    setError(null);
-                    setIsLoading(false);
-                });
-
-                return () => {
-                    unsubscribeBranches();
-                    unsubscribePlants();
-                }; // Cleanup listeners
-            }, [userId]); // Dependency array includes userId
-
-            const handleAddPlant = React.useCallback(async (e) => {
-                e.preventDefault();
-                if (!newPlantName.trim()) {
-                    setError("O nome da usina não pode estar vazio.");
-                    showToast("O nome da usina não pode estar vazio.", "error");
-                    return;
-                }
-                if (!selectedBranch) {
-                    setError("Selecione uma filial para a usina.");
-                    showToast("Selecione uma filial para a usina.", "error");
-                    return;
-                }
-
-                setIsLoading(true);
-                try {
-                    await FirebaseService.addDocument('usinas', userId, { name: newPlantName.trim(), branch_name: selectedBranch });
-                    setNewPlantName('');
-                    setSelectedBranch('');
-                    setError(null);
-                    showToast("Usina adicionada com sucesso!", "success");
-                } catch (e) {
-                    console.error("Erro ao adicionar usina:", e);
-                    setError("Erro ao adicionar usina. Tente novamente.");
-                    showToast("Erro ao adicionar usina.", "error");
-                } finally {
-                    setIsLoading(false);
-                }
-            }, [newPlantName, selectedBranch, userId, showToast]); // Dependencies for useCallback
-
-            const confirmDeletePlant = React.useCallback((plant) => {
-                setPlantToDelete(plant);
-                setShowConfirmModal(true);
-            }, []); // No dependencies for useCallback
-
-            const handleDeletePlant = React.useCallback(async () => {
-                if (!plantToDelete) return;
-
-                setIsLoading(true);
-                setShowConfirmModal(false); // Close modal
-                try {
-                    await FirebaseService.deleteDocument('usinas', userId, plantToDelete.id);
-                    showToast("Usina excluída com sucesso!", "success");
-                } catch (e) {
-                    console.error("Erro ao deletar usina:", e);
-                    setError("Erro ao deletar usina. Tente novamente.");
-                    showToast("Erro ao excluir usina.", "error");
-                } finally {
-                    setIsLoading(false);
-                    setPlantToDelete(null);
-                }
-            }, [plantToDelete, userId, showToast]); // Dependencies for useCallback
-
-            return (
-                React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg" },
-                    React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4 text-center" }, "Cadastro de Usinas"),
-                    error && (
-                        React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
-                            React.createElement('strong', { className: "font-bold" }, "Erro:"),
-                            React.createElement('span', { className: "block sm:inline" }, " ", error)
-                        )
-                    ),
-                    React.createElement('form', { onSubmit: handleAddPlant, className: "space-y-6 mb-6" },
-                        React.createElement('div', null,
-                            React.createElement('label', { htmlFor: "newPlantName", className: "block text-sm font-medium text-gray-700 mb-1" }, "Nome da Usina"),
-                            React.createElement('input', {
-                                type: "text",
-                                id: "newPlantName",
-                                value: newPlantName,
-                                onChange: (e) => setNewPlantName(e.target.value),
-                                className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                                placeholder: "Ex: Usina A",
-                                required: true,
-                                disabled: isLoading
-                            })
-                        ),
-                        React.createElement('div', null,
-                            React.createElement('label', { htmlFor: "selectedBranch", className: "block text-sm font-medium text-gray-700 mb-1" }, "Filial Associada:"),
-                            React.createElement('select', {
-                                id: "selectedBranch",
-                                value: selectedBranch,
-                                onChange: (e) => setSelectedBranch(e.target.value),
-                                className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                                required: true,
-                                disabled: isLoading
-                            },
-                                React.createElement('option', { value: "" }, "Selecione uma filial"),
-                                availableBranches.length === 0 ? (
-                                    React.createElement('option', { disabled: true }, "Nenhuma filial disponível")
-                                ) : (
-                                    availableBranches.map(branchName => (
-                                        React.createElement('option', { key: branchName, value: branchName }, branchName)
-                                    ))
-                                )
-                            )
-                        ),
-                        React.createElement('div', { className: "flex justify-center" },
-                            React.createElement('button', {
-                                type: "submit",
-                                className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
-                                disabled: isLoading
-                            },
-                                isLoading ? (
-                                    React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
-                                        React.createElement('circle', { cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
-                                        React.createElement('path', { className: "opacity-25", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
-                                    )
-                                ) : (
-                                    React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
-                                ),
-                                isLoading ? 'Adicionando...' : 'Adicionar Usina'
-                            )
-                        )
-                    ),
-                    React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
-                        React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
-                            React.createElement('thead', { className: "bg-gray-100" },
-                                React.createElement('tr', null,
-                                    React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Usina"),
-                                    React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Filial Associada"),
-                                    React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
-                                )
-                            ),
-                            React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
-                                isLoading && plantsList.length === 0 ? (
-                                    React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando usinas...")
-                                    )
-                                ) : plantsList.length === 0 ? (
-                                    React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhuma usina cadastrada.")
-                                    )
-                                ) : (
-                                    plantsList.map((plant) => (
-                                        React.createElement('tr', { key: plant.id, className: "hover:bg-gray-50 transition-colors duration-150" },
-                                            React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, plant.name),
-                                            React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, plant.branch_name),
-                                            React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium" },
-                                                React.createElement('button', {
-                                                    onClick: () => confirmDeletePlant(plant),
-                                                    className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
-                                                    title: "Excluir Usina",
-                                                    disabled: isLoading
-                                                },
-                                                    React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5" })
-                                                )
-                                            )
-                                        )
-                                    ))
-                                )
-                            )
-                        )
-                    ),
-                    showConfirmModal && React.createElement(ConfirmationModal, {
-                        message: `Tem certeza que deseja excluir a usina "${plantToDelete?.name}"?`,
-                        onConfirm: handleDeletePlant,
                         onCancel: React.useCallback(() => setShowConfirmModal(false), []) // Memoize inline function
                     })
                 )
@@ -1320,12 +1155,12 @@
             React.useEffect(() => {
                 if (!userId) return;
                 setIsLoading(true);
-                const unsubscribe = FirebaseService.listenToCollection('filiais', userId, (data) => {
+                const unsubscribe = SupabaseService.listenToTable('filiais', (data) => {
                     const sortedData = data.sort((a, b) => a.name.localeCompare(b.name));
                     setBranches(sortedData.map(b => b.name));
                     setError(null);
                     setIsLoading(false);
-                });
+                }, [{ field: 'created_by_username', value: userId }]); // Filter by current user's ID
                 return () => unsubscribe(); // Cleanup listener
             }, [userId]); // Dependency array includes userId
 
@@ -1340,15 +1175,15 @@
 
                 setIsLoading(true);
                 try {
-                    await FirebaseService.addDocument('trocasFilial', userId, { plate: plate.trim(), newBranch: newBranch, executionDate: executionDate });
-                    showToast("Troca de filial registrada com sucesso!", "success");
+                    await SupabaseService.addDocument('trocasFilial', { plate: plate.trim(), newBranch: newBranch, executionDate: executionDate, created_by_username: userId });
+                    showToast("Troca de filial registada com sucesso!", "success");
                     setNewPlate('');
                     setNewBranch('');
                     setExecutionDate('');
                 } catch (e) {
-                    console.error("Erro ao registrar troca de filial:", e);
-                    setError("Erro ao registrar troca de filial. Tente novamente.");
-                    showToast("Erro ao registrar troca de filial.", "error");
+                    console.error("Erro ao registar troca de filial:", e);
+                    setError("Erro ao registar troca de filial. Tente novamente.");
+                    showToast("Erro ao registar troca de filial.", "error");
                 } finally {
                     setIsLoading(false);
                 }
@@ -1404,7 +1239,7 @@
                                 },
                                     React.createElement('option', { value: "" }, "Selecione..."),
                                     isLoading && branches.length === 0 ? (
-                                        React.createElement('option', { disabled: true }, "Carregando filiais...")
+                                        React.createElement('option', { disabled: true }, "A carregar filiais...")
                                     ) : (
                                         branches.map((branchName) => (
                                             React.createElement('option', { key: branchName, value: branchName }, branchName)
@@ -1437,10 +1272,10 @@
                             isLoading ? (
                                 React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
                                     React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
-                                    React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
+                                    React.createElement('path', { className: "opacity-75", fill: "currentColor", d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
                                 )
                             ) : (
-                                "Registrar Troca"
+                                "Registar Troca"
                             )
                         )
                     )
@@ -1487,17 +1322,17 @@
                 requestAnimationFrame(step);
             }, []); // No dependencies for useCallback as it's a generic animation logic
 
-            // Fetch available users (public collection)
+            // Fetch available users (public table)
             React.useEffect(() => {
                 if (!userId) return;
                 const fetchAvailableUsers = async () => {
                     try {
-                        const users = await FirebaseService.getDocuments('app_users', null, true); // isPublic = true
+                        const users = await SupabaseService.getDocuments('app_users'); // No filter needed for public table
                         setAvailableUsers(['Todos os Responsáveis', ...users.map(u => u.username)]);
                     } catch (e) {
-                        console.error("Erro ao buscar usuários disponíveis no Firebase:", e);
-                        setError("Erro ao carregar lista de usuários. Por favor, recarregue a página.");
-                        showToast("Erro ao carregar usuários.", "error");
+                        console.error("Erro ao buscar utilizadores disponíveis no supabase:", e);
+                        setError("Erro ao carregar lista de utilizadores. Por favor, recarregue a página.");
+                        showToast("Erro ao carregar utilizadores.", "error");
                     }
                 };
                 fetchAvailableUsers();
@@ -1507,7 +1342,7 @@
             React.useEffect(() => {
                 if (!userId) return;
                 setIsLoading(true);
-                const unsubscribe = FirebaseService.listenToCollection('equipamentos', userId, (data) => {
+                const unsubscribe = SupabaseService.listenToTable('equipamentos', (data) => {
                     const counts = {
                         'BOMBA LANÇA': 0,
                         'BOMBA': 0,
@@ -1525,7 +1360,7 @@
                     });
                     setError(null);
                     setIsLoading(false);
-                });
+                }, [{ field: 'created_by_username', value: userId }]); // Filter by current user's ID
                 return () => unsubscribe(); // Cleanup listener
             }, [userId, animateCount]); // Dependencies for useEffect
 
@@ -1534,19 +1369,12 @@
                 if (!userId) return;
                 setIsLoading(true);
 
-                const filters = [];
-                if (startDate && endDate) {
-                    filters.push({ field: 'executionDate', operator: '>=', value: startDate });
-                    filters.push({ field: 'executionDate', operator: '<=', value: endDate });
-                }
-                if (selectedUser !== 'Todos os Responsáveis') {
-                    filters.push({ field: 'created_by_username', operator: '==', value: selectedUser });
-                }
+                const filters = [{ field: 'created_by_username', value: userId }]; // Always filter by current user's ID
 
-                const unsubscribe = FirebaseService.listenToCollection('trocasFilial', userId, (data) => {
+                const unsubscribe = SupabaseService.listenToTable('trocasFilial', (data) => {
                     // Sort data by created_at in descending order
                     const sortedData = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                    // Apply in-memory filtering for date range and user if needed, as Firestore doesn't support
+                    // Apply in-memory filtering for date range and user if needed, as supabase doesn't support
                     // complex queries like orderBy on different fields with range filters without indexes.
                     // For simplicity and to avoid complex index requirements, we filter after fetching.
                     const filteredData = sortedData.filter(registro => {
@@ -1557,7 +1385,7 @@
                     setRegistros(filteredData);
                     setError(null);
                     setIsLoading(false);
-                });
+                }, filters); // Dependencies for supabase listener
                 return () => unsubscribe(); // Cleanup listener
             }, [userId, startDate, endDate, selectedUser]); // Dependencies for useEffect
 
@@ -1617,7 +1445,7 @@
                     ),
 
                     React.createElement('div', { className: "mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50" },
-                        React.createElement('h3', { className: "text-xl font-semibold text-gray-700 mb-4" }, "Filtrar Registros"),
+                        React.createElement('h3', { className: "text-xl font-semibold text-gray-700 mb-4" }, "Filtrar Registos"),
                         React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end" },
                             React.createElement('div', { className: "relative" },
                                 React.createElement('label', { htmlFor: "startDate", className: "block text-sm font-medium text-gray-700 mb-1" }, "Data Início"),
@@ -1676,12 +1504,12 @@
                                     isLoading ? (
                                         React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
                                             React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
-                                            React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
-                                    )
-                                ) : (
+                                            React.createElement('path', { className: "opacity-75", fill: "currentColor", d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
+                                        )
+                                    ) : (
                                         React.createElement(LucideIcon, { name: "Search", className: "mr-2 h-5 w-5" })
                                     ),
-                                    isLoading ? 'Aplicando...' : 'Aplicar Filtros'
+                                    isLoading ? 'A aplicar...' : 'Aplicar Filtros'
                                 )
                             )
                         )
@@ -1721,7 +1549,7 @@
                     React.createElement('h3', { className: "text-xl font-semibold text-gray-700 mb-4 border-b pb-2 mt-8" }, "Distribuição de Equipamentos"),
                     React.createElement('div', { className: "mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50" },
                         totalEquipment === 0 ? (
-                            React.createElement('p', { className: "text-center text-gray-500" }, isLoading ? "Carregando distribuição..." : "Nenhum equipamento para exibir a distribuição.")
+                            React.createElement('p', { className: "text-center text-gray-500" }, isLoading ? "A carregar distribuição..." : "Nenhum equipamento para exibir a distribuição.")
                         ) : (
                             Object.keys(equipmentCounts).map(type => {
                                 const percentage = (equipmentCounts[type] / totalEquipment) * 100;
@@ -1742,12 +1570,12 @@
                     ),
 
 
-                    React.createElement('h3', { className: "text-xl font-semibold text-gray-700 mb-4 border-b pb-2 mt-8" }, "Registros de Alteração de Placas"),
+                    React.createElement('h3', { className: "text-xl font-semibold text-gray-700 mb-4 border-b pb-2 mt-8" }, "Registos de Alteração de Placas"),
                     React.createElement('div', { className: "flex justify-between items-center mb-4" },
                         React.createElement('div', { className: "relative flex-grow mr-4" },
                             React.createElement('input', {
                                 type: "text",
-                                placeholder: "Buscar registros...",
+                                placeholder: "Pesquisar registos...",
                                 value: searchTerm,
                                 onChange: (e) => setSearchTerm(e.target.value),
                                 className: "block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
@@ -1780,11 +1608,11 @@
                             React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
                                 isLoading && filteredRegistros.length === 0 ? (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "4", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando registros...")
+                                        React.createElement('td', { colSpan: "4", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "A carregar registos...")
                                     )
                                 ) : filteredRegistros.length === 0 ? (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: "4", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum registro encontrado.")
+                                        React.createElement('td', { colSpan: "4", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum registo encontrado.")
                                     )
                                 ) : (
                                     filteredRegistros.map((registro) => (
@@ -1792,7 +1620,7 @@
                                             React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, registro.newBranch),
                                             React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.plate),
                                             React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.plate),
-                                            React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.executionDate)
+                                            React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.created_at ? new Date(registro.created_at).toLocaleDateString() : 'N/A')
                                         )
                                     ))
                                 )
@@ -1808,14 +1636,15 @@
             return (
                 React.createElement('div', { className: "flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] bg-white p-6 rounded-xl shadow-lg text-center" },
                     React.createElement('h2', { className: "text-4xl font-extrabold text-blue-600 text-center mb-4" }, "SISTEMA DE GERENCIAMENTO"),
-                    React.createElement('p', { className: "text-lg text-gray-700 mt-4 max-w-2xl leading-relaxed" }, "O SISTEMA DE GERENCIAMENTO é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações.")
+                    React.createElement('p', { className: "text-lg text-gray-700 mt-4 max-w-2xl leading-relaxed" }, "O SISTEMA DE GERENCIAMENTO é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações.")
                 )
             );
         });
 
         // Componente principal da Aplicação, memoized
         const App = React.memo(function App() {
-            const [userId, setUserId] = React.useState(null);
+            const [userId, setUserId] = React.useState(null); // supabase user ID (UUID)
+            const [username, setUsername] = React.useState(null); // Username from app_users table
             const [userRole, setUserRole] = React.useState(null);
             const [isAuthReady, setIsAuthReady] = React.useState(false);
             const [currentPage, setCurrentPage] = React.useState('emptyPanel');
@@ -1838,70 +1667,97 @@
 
             // Authenticate and set up auth state listener
             React.useEffect(() => {
-                const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        // For anonymous users or custom token users, Firebase provides a UID.
-                        // We need to map this UID to a 'username' and 'role' from our 'app_users' collection.
-                        // For the 'admin' user, we'll use a fixed username 'admin' and role 'administrador'.
-                        // For other users, we'll fetch their username and role from Firestore.
-                        if (user.uid === 'admin_uid_placeholder') { // This is a placeholder, replace with actual admin UID if needed
-                            setUserId('admin');
-                            setUserRole('administrador');
-                        } else {
-                            try {
-                                const users = await FirebaseService.getDocuments('app_users', null, true, [{ field: 'uid', operator: '==', value: user.uid }]);
-                                if (users && users.length > 0) {
-                                    setUserId(users[0].username); // Use username from Firestore
-                                    setUserRole(users[0].role);
-                                } else {
-                                    // If user exists in Firebase Auth but not in app_users, sign out or handle error
-                                    console.warn("Usuário autenticado no Firebase Auth, mas não encontrado em app_users.");
-                                    auth.signOut();
-                                    setUserId(null);
-                                    setUserRole(null);
-                                }
-                            } catch (e) {
-                                console.error("Erro ao buscar detalhes do usuário no Firestore:", e);
-                                setError("Erro ao carregar dados do usuário.");
-                                auth.signOut();
+                const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+                    if (session) {
+                        setUserId(session.user.id);
+                        // Fetch user details from 'app_users' table
+                        try {
+                            const users = await SupabaseService.getDocuments('app_users', [{ field: 'id', operator: '==', value: session.user.id }]);
+                            if (users && users.length > 0) {
+                                setUsername(users[0].username);
+                                setUserRole(users[0].role);
+                            } else {
+                                // If user exists in supabase Auth but not in app_users, sign out or handle error
+                                console.warn("Utilizador autenticado no supabase Auth, mas não encontrado em app_users.");
+                                await SupabaseService.signOut();
                                 setUserId(null);
+                                setUsername(null);
                                 setUserRole(null);
                             }
+                        } catch (e) {
+                            console.error("Erro ao buscar detalhes do utilizador no supabase:", e);
+                            setError("Erro ao carregar dados do utilizador.");
+                            await SupabaseService.signOut();
+                            setUserId(null);
+                            setUsername(null);
+                            setUserRole(null);
                         }
                     } else {
                         setUserId(null);
+                        setUsername(null);
                         setUserRole(null);
                     }
                     setIsAuthReady(true);
                 });
 
-                // Initial authentication for Canvas environment
-                FirebaseService.authenticate().catch(e => {
-                    console.error("Erro na autenticação inicial:", e);
-                    setError("Erro na autenticação inicial. Recarregue a página.");
+                // Check initial session
+                SupabaseService.getSession().then(session => {
+                    if (session && session.user) {
+                        setUserId(session.user.id);
+                        // Fetch user details from 'app_users' table
+                        SupabaseService.getDocuments('app_users', [{ field: 'id', operator: '==', value: session.user.id }])
+                            .then(users => {
+                                if (users && users.length > 0) {
+                                    setUsername(users[0].username);
+                                    setUserRole(users[0].role);
+                                } else {
+                                    console.warn("Utilizador autenticado no supabase Auth, mas não encontrado em app_users.");
+                                    SupabaseService.signOut();
+                                    setUserId(null);
+                                    setUsername(null);
+                                    setUserRole(null);
+                                }
+                            })
+                            .catch(e => {
+                                console.error("Erro na sessão inicial do supabase:", e);
+                                setError("Erro na sessão inicial. Recarregue a página.");
+                                setIsAuthReady(true); // Allow app to render login page even if auth fails
+                            });
+                    }
+                    setIsAuthReady(true);
+                }).catch(e => {
+                    console.error("Erro na sessão inicial do supabase:", e);
+                    setError("Erro na sessão inicial. Recarregue a página.");
                     setIsAuthReady(true); // Allow app to render login page even if auth fails
                 });
 
-                return () => unsubscribeAuth(); // Cleanup auth listener
+                return () => {
+                    authListener.data.subscription.unsubscribe(); // Cleanup auth listener
+                };
             }, []); // Empty dependency array means this runs once on mount
 
-            const handleLogin = React.useCallback((role, username) => {
+            const handleLogin = React.useCallback(async (role, loggedInUsername) => {
                 setUserRole(role);
-                setUserId(username); // Set userId to the logged-in username for data partitioning
+                setUsername(loggedInUsername); // Set username
+                const session = await SupabaseService.getSession();
+                if (session && session.user) {
+                    setUserId(session.user.id); // Set userId to supabase Auth UID
+                }
                 setCurrentPage('emptyPanel');
                 showToast("Login realizado com sucesso!", "success");
             }, [showToast]); // Dependency for useCallback
 
             const handleLogout = React.useCallback(async () => {
                 try {
-                    await auth.signOut();
+                    await SupabaseService.signOut();
                     setUserRole(null);
                     setUserId(null);
+                    setUsername(null);
                     setCurrentPage('login');
-                    showToast("Sessão encerrada.", "success");
+                    showToast("Sessão terminada.", "success");
                 } catch (e) {
-                    console.error("Erro ao fazer logout:", e);
-                    showToast("Erro ao encerrar sessão.", "error");
+                    console.error("Erro ao terminar sessão:", e);
+                    showToast("Erro ao terminar sessão.", "error");
                 }
             }, [showToast]); // Dependency for useCallback
 
@@ -1924,7 +1780,7 @@
             if (!isAuthReady) {
                 return (
                     React.createElement('div', { className: "flex items-center justify-center min-h-screen bg-gray-100" },
-                        React.createElement('div', { className: "text-lg font-semibold text-gray-700" }, "Carregando aplicativo...")
+                        React.createElement('div', { className: "text-lg font-semibold text-gray-700" }, "A carregar aplicação...")
                     )
                 );
             }
@@ -2018,7 +1874,7 @@
                                                         className: `flex items-center w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${currentPage === 'userManagement' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-gray-700 text-gray-300'}`
                                                     },
                                                         React.createElement(LucideIcon, { name: "Users", className: "mr-3 h-5 w-5" }),
-                                                        "Usuários"
+                                                        "Utilizadores"
                                                     )
                                                 ),
                                                 React.createElement('li', { className: "mb-2" },
@@ -2030,17 +1886,6 @@
                                                         "Regionais"
                                                     )
                                                 )
-                                                /* Removed 'Usinas' option
-                                                React.createElement('li', { className: "mb-2" },
-                                                    React.createElement('button', {
-                                                        onClick: () => { setCurrentPage('plantManagement'); closeSidebar(); }, // New menu item for Usinas
-                                                        className: `flex items-center w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${currentPage === 'plantManagement' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-gray-700 text-gray-300'}`
-                                                    },
-                                                        React.createElement(LucideIcon, { name: "Factory", className: "mr-3 h-5 w-5" }), // New icon for Usinas
-                                                        "Usinas"
-                                                    )
-                                                )
-                                                */
                                             )
                                         )
                                     )
@@ -2087,7 +1932,6 @@
                             currentPage === 'equipmentManagement' && userRole === 'administrador' && React.createElement(EquipmentManagement, { userId: userId, showToast: showToast }),
                             currentPage === 'userManagement' && userRole === 'administrador' && React.createElement(UserManagement, { userId: userId, showToast: showToast }),
                             currentPage === 'regionalManagement' && userRole === 'administrador' && React.createElement(RegionalManagement, { userId: userId, showToast: showToast }),
-                            // currentPage === 'plantManagement' && userRole === 'administrador' && React.createElement(PlantManagement, { userId: userId, showToast: showToast }), // Removed Usinas option
                             currentPage === 'branchTransfer' && React.createElement(BranchTransfer, { userId: userId, setCurrentPage: setCurrentPage, showToast: showToast })
                         ),
                         toastMessage && React.createElement(Toast, { message: toastMessage, type: toastType, onClose: clearToast })
