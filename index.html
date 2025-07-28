@@ -691,6 +691,9 @@
               const [isLoading, setIsLoading] = React.useState(false);
               const [showConfirmModal, setShowConfirmModal] = React.useState(false);
               const [equipmentToDelete, setEquipmentToDelete] = React.useState(null);
+              const [editingEquipment, setEditingEquipment] = React.useState(null); // New state for editing
+              const [originalEquipment, setOriginalEquipment] = React.useState(null); // To store original data for cancel
+              const [searchTerm, setSearchTerm] = React.useState(''); // New state for search term
 
 
               const equipmentTypes = ["BOMBA LANÇA", "BOMBA", "BETONEIRA"];
@@ -754,6 +757,75 @@
                 setIsLoading(false);
               };
 
+              // New: Handle edit click
+              const handleEditClick = (equipment) => {
+                setEditingEquipment({ ...equipment }); // Create a copy for editing
+                setOriginalEquipment({ ...equipment }); // Store original for cancel
+              };
+
+              // New: Handle cancel edit
+              const handleCancelEdit = () => {
+                setEditingEquipment(null);
+                setOriginalEquipment(null);
+                // Revert the equipment in the list to its original state
+                setEquipmentList(prevEquipment =>
+                    prevEquipment.map(eq =>
+                        eq.id === originalEquipment.id ? originalEquipment : eq
+                    )
+                );
+              };
+
+              // New: Handle field change during edit
+              const handleFieldChange = (e, fieldName) => {
+                setEditingEquipment(prev => ({
+                    ...prev,
+                    [fieldName]: e.target.value
+                }));
+              };
+
+              // New: Handle update equipment
+              const handleUpdateEquipment = async () => {
+                if (!editingEquipment) return;
+
+                if (!editingEquipment.plate.trim() || !editingEquipment.type) {
+                    setError("Por favor, preencha a placa e selecione o tipo de equipamento.");
+                    showToast("Preencha todos os campos.", "error");
+                    return;
+                }
+
+                setIsLoading(true);
+                try {
+                    const { error: updateError } = await supabase
+                        .from('equipamentos')
+                        .update({
+                            plate: editingEquipment.plate.trim(),
+                            type: editingEquipment.type
+                        })
+                        .eq('id', editingEquipment.id);
+
+                    if (updateError) throw updateError;
+
+                    showToast("Equipamento atualizado com sucesso!", "success");
+                    setEditingEquipment(null);
+                    setOriginalEquipment(null);
+                    // Re-fetch data to ensure consistency
+                    const { data, error: fetchError } = await supabase
+                        .from('equipamentos')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    if (fetchError) console.error("Erro ao re-buscar equipamentos:", fetchError);
+                    else setEquipmentList(data);
+
+                } catch (e) {
+                    console.error("Erro ao atualizar equipamento:", e);
+                    setError("Erro ao atualizar equipamento.");
+                    showToast("Erro ao atualizar equipamento.", "error");
+                } finally {
+                    setIsLoading(false);
+                }
+              };
+
+
               const confirmDeleteEquipment = (equipment) => {
                 setEquipmentToDelete(equipment);
                 setShowConfirmModal(true);
@@ -791,6 +863,12 @@
                 }
               };
 
+              // Filtered list based on search term
+              const filteredEquipmentList = equipmentList.filter(equipment =>
+                  equipment.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  equipment.type.toLowerCase().includes(searchTerm.toLowerCase())
+              );
+
               return (
                 React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg" },
                   React.createElement('h2', { className: "text-2xl font-bold text-gray-800 mb-4 text-center" }, "Cadastro de Equipamentos"),
@@ -811,7 +889,7 @@
                         className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                         placeholder: "Ex: ABC-1234",
                         required: true,
-                        disabled: isLoading
+                        disabled: isLoading || editingEquipment // Disable when editing
                       })
                     ),
                     React.createElement('div', null,
@@ -822,7 +900,7 @@
                         onChange: (e) => setNewEquipmentType(e.target.value),
                         className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                         required: true,
-                        disabled: isLoading
+                        disabled: isLoading || editingEquipment // Disable when editing
                       },
                         React.createElement('option', { value: "" }, "Selecione um tipo"),
                         equipmentTypes.map((type) => (
@@ -834,7 +912,7 @@
                       React.createElement('button', {
                         type: "submit",
                         className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
-                        disabled: isLoading
+                        disabled: isLoading || editingEquipment // Disable when editing
                       },
                         isLoading ? (
                           React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
@@ -848,6 +926,23 @@
                       )
                     )
                   ),
+                  React.createElement('div', { className: "mb-4" },
+                      React.createElement('label', { htmlFor: "searchEquipment", className: "block text-sm font-medium text-gray-700 mb-1" }, "Buscar por Placa ou Tipo:"),
+                      React.createElement('div', { className: "relative" },
+                          React.createElement('input', {
+                              type: "text",
+                              id: "searchEquipment",
+                              value: searchTerm,
+                              onChange: (e) => setSearchTerm(e.target.value),
+                              className: "block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
+                              placeholder: "Buscar placa ou tipo...",
+                              disabled: isLoading
+                          }),
+                          React.createElement('div', { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" },
+                              React.createElement(LucideIcon, { name: "Search", className: "h-5 w-5 text-gray-400" })
+                          )
+                      )
+                  ),
                   React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
                     React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
                       React.createElement('thead', { className: "bg-gray-100" },
@@ -858,27 +953,90 @@
                         )
                       ),
                       React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
-                        isLoading && equipmentList.length === 0 ? (
+                        isLoading && filteredEquipmentList.length === 0 ? (
                             React.createElement('tr', null,
                                 React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando equipamentos...")
                             )
-                        ) : equipmentList.length === 0 ? (
+                        ) : filteredEquipmentList.length === 0 ? (
                           React.createElement('tr', null,
                             React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum equipamento cadastrado.")
                           )
                         ) : (
-                          equipmentList.map((equipment) => (
+                          filteredEquipmentList.map((equipment) => (
                             React.createElement('tr', { key: equipment.id, className: "hover:bg-gray-50 transition-colors duration-150" },
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, equipment.plate),
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, equipment.type),
+                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" },
+                                editingEquipment && editingEquipment.id === equipment.id ? (
+                                    React.createElement('input', {
+                                        type: "text",
+                                        value: editingEquipment.plate,
+                                        onChange: (e) => handleFieldChange(e, 'plate'),
+                                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                                        disabled: isLoading
+                                    })
+                                ) : (
+                                    React.createElement('span', null, equipment.plate)
+                                )
+                              ),
+                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" },
+                                editingEquipment && editingEquipment.id === equipment.id ? (
+                                    React.createElement('select', {
+                                        value: editingEquipment.type,
+                                        onChange: (e) => handleFieldChange(e, 'type'),
+                                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
+                                        required: true,
+                                        disabled: isLoading
+                                    },
+                                        equipmentTypes.map((type) => (
+                                            React.createElement('option', { key: type, value: type }, type)
+                                        ))
+                                    )
+                                ) : (
+                                    React.createElement('span', null, equipment.type)
+                                )
+                              ),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium" },
-                                React.createElement('button', {
-                                  onClick: () => confirmDeleteEquipment(equipment),
-                                  className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
-                                  title: "Excluir Equipamento",
-                                  disabled: isLoading
-                                },
-                                  React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5" })
+                                editingEquipment && editingEquipment.id === equipment.id ? (
+                                    React.createElement(React.Fragment, null,
+                                        React.createElement('button', {
+                                            onClick: handleUpdateEquipment,
+                                            className: "text-green-600 hover:text-green-800 transition-colors duration-150 mr-2",
+                                            title: "Salvar",
+                                            disabled: isLoading
+                                        },
+                                            React.createElement(LucideIcon, { name: "Save", className: "h-5 w-5 inline-block align-middle" }),
+                                            React.createElement('span', { className: "ml-1" }, "Salvar")
+                                        ),
+                                        React.createElement('button', {
+                                            onClick: handleCancelEdit,
+                                            className: "text-gray-600 hover:text-gray-800 transition-colors duration-150",
+                                            title: "Cancelar",
+                                            disabled: isLoading
+                                        },
+                                            React.createElement(LucideIcon, { name: "Ban", className: "h-5 w-5 inline-block align-middle" }),
+                                            React.createElement('span', { className: "ml-1" }, "Cancelar")
+                                        )
+                                    )
+                                ) : (
+                                    React.createElement(React.Fragment, null,
+                                        React.createElement('button', {
+                                            onClick: () => handleEditClick(equipment),
+                                            className: "text-blue-600 hover:text-blue-800 transition-colors duration-150 mr-2",
+                                            title: "Editar",
+                                            disabled: isLoading
+                                        },
+                                            React.createElement(LucideIcon, { name: "Edit", className: "h-5 w-5 inline-block align-middle" }),
+                                            React.createElement('span', { className: "ml-1" }, "Editar")
+                                        ),
+                                        React.createElement('button', {
+                                            onClick: () => confirmDeleteEquipment(equipment),
+                                            className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
+                                            title: "Excluir Equipamento",
+                                            disabled: isLoading
+                                        },
+                                            React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5 inline-block align-middle" }),
+                                            React.createElement('span', { className: "ml-1" }, "Excluir")
+                                        )
+                                    )
                                 )
                               )
                             )
@@ -1128,9 +1286,9 @@
             function BranchTransfer({ userId, setCurrentPage, showToast }) {
               const [plate, setNewPlate] = React.useState('');
               const [newBranch, setNewBranch] = React.useState('');
-              const [executionDate, setExecutionDate] = React.useState('');
+              const [executionDate, setExecutionDate] = React.useState(''); // Data de Alteração
               const [branches, setBranches] = React.useState([]);
-              const [availablePlates, setAvailablePlates] = React.useState([]); // New state for available plates
+              const [availablePlates, setAvailablePlates] = React.useState([]);
               const [error, setError] = React.useState(null);
               const [isLoading, setIsLoading] = React.useState(false);
 
@@ -1142,7 +1300,7 @@
                   // Fetch branches
                   const { data: branchesData, error: fetchBranchesError } = await supabase
                     .from('filiais')
-                    .select('name'); // Removed created_by_username filter to show all branches
+                    .select('name');
 
                   if (fetchBranchesError) {
                     console.error("Erro ao buscar filiais no Supabase:", fetchBranchesError);
@@ -1155,7 +1313,7 @@
                   // Fetch equipment plates
                   const { data: equipmentData, error: fetchEquipmentError } = await supabase
                     .from('equipamentos')
-                    .select('plate'); // Removed created_by_username filter to show all equipment plates
+                    .select('plate');
 
                   if (fetchEquipmentError) {
                     console.error("Erro ao buscar equipamentos no Supabase:", fetchEquipmentError);
@@ -1181,10 +1339,44 @@
 
                 setIsLoading(true);
                 try {
+                  // 1. Check for an existing active record for this plate
+                  const { data: existingRecords, error: fetchExistingError } = await supabase
+                    .from('trocasFilial')
+                    .select('*')
+                    .eq('plate', plate.trim())
+                    .is('ending_date', null)
+                    .order('executionDate', { ascending: false }) // Get the most recent one
+                    .limit(1);
+
+                  if (fetchExistingError) {
+                    throw fetchExistingError;
+                  }
+
+                  // 2. If an active record is found, update its ending_date
+                  if (existingRecords && existingRecords.length > 0) {
+                    const existingRecord = existingRecords[0];
+
+                    // Calculate the day before the new executionDate
+                    const newExecutionDateObj = new Date(executionDate);
+                    newExecutionDateObj.setDate(newExecutionDateObj.getDate() - 1);
+                    const previousDayDate = newExecutionDateObj.toISOString().split('T')[0];
+
+                    const { error: updateError } = await supabase
+                      .from('trocasFilial')
+                      .update({ ending_date: previousDayDate })
+                      .eq('id', existingRecord.id); // Update the specific existing record
+
+                    if (updateError) {
+                      throw updateError;
+                    }
+                    showToast(`Registro anterior da placa ${plate.trim()} atualizado.`, "success");
+                  }
+
+                  // 3. Insert the new record
                   const { error: insertError } = await supabase
                     .from('trocasFilial')
                     .insert([
-                      { plate: plate.trim(), newBranch: newBranch, executionDate: executionDate, created_by_username: userId }
+                      { plate: plate.trim(), newBranch: newBranch, executionDate: executionDate, ending_date: null, created_by_username: userId }
                     ]);
 
                   if (insertError) throw insertError;
@@ -1229,7 +1421,7 @@
                     React.createElement('div', null,
                       React.createElement('label', { htmlFor: "plate", className: "block text-sm font-medium text-gray-700 mb-1" }, "Placa do Equipamento:"),
                       React.createElement('div', { className: "relative" },
-                        React.createElement('select', { // Changed from input to select
+                        React.createElement('select', {
                           id: "plate",
                           value: plate,
                           onChange: (e) => setNewPlate(e.target.value),
@@ -1275,7 +1467,7 @@
                       )
                     ),
                     React.createElement('div', null,
-                      React.createElement('label', { htmlFor: "executionDate", className: "block text-sm font-medium text-gray-700 mb-1" }, "Data de Execução:"),
+                      React.createElement('label', { htmlFor: "executionDate", className: "block text-sm font-medium text-gray-700 mb-1" }, "Data de Alteração:"),
                       React.createElement('div', { className: "relative" },
                         React.createElement('input', {
                           type: "date",
@@ -1368,42 +1560,52 @@
                 fetchAvailableUsers();
               }, [userId, showToast]);
 
+              // New useEffect to fetch and count equipment types
               React.useEffect(() => {
-                if (!userId) return;
-
-                const fetchEquipmentCounts = async () => {
+                const fetchAndCountEquipment = async () => {
                   setIsLoading(true);
-                  const { data, error: fetchError } = await supabase
-                    .from('equipamentos')
-                    .select('type')
-                    .eq('created_by_username', userId);
+                  try {
+                    const { data, error: fetchError } = await supabase
+                      .from('equipamentos')
+                      .select('type'); // Fetch only the 'type' column for counting
 
-                  if (fetchError) {
-                    console.error("Erro ao buscar contagem de equipamentos no Supabase:", fetchError);
-                    setError("Erro ao carregar dados do dashboard. Por favor, recarregue a página.");
-                    showToast("Erro ao carregar dados do dashboard.", "error");
-                    return;
-                  }
-
-                  const counts = {
-                    'BOMBA LANÇA': 0,
-                    'BOMBA': 0,
-                    'BETONEIRA': 0,
-                  };
-                  data.forEach(item => {
-                    if (counts.hasOwnProperty(item.type)) {
-                      counts[item.type]++;
+                    if (fetchError) {
+                      console.error("Erro ao buscar tipos de equipamento no Supabase:", fetchError);
+                      setError("Erro ao carregar dados de equipamentos. Por favor, recarregue a página.");
+                      showToast("Erro ao carregar equipamentos.", "error");
+                      return;
                     }
-                  });
-                  setEquipmentCounts(counts);
-                  // Animate counts
-                  Object.keys(counts).forEach(type => {
-                      animateCount(counts[type], type);
-                  });
-                  setIsLoading(false);
+
+                    const counts = {
+                      'BOMBA LANÇA': 0,
+                      'BOMBA': 0,
+                      'BETONEIRA': 0,
+                    };
+
+                    data.forEach(equipment => {
+                      if (counts.hasOwnProperty(equipment.type)) {
+                        counts[equipment.type]++;
+                      }
+                    });
+
+                    setEquipmentCounts(counts);
+                    // Animate counts after setting them
+                    Object.keys(counts).forEach(type => {
+                        animateCount(counts[type], type);
+                    });
+
+                  } catch (e) {
+                    console.error("Erro inesperado ao contar equipamentos:", e);
+                    setError("Erro ao processar dados de equipamentos.");
+                    showToast("Erro ao processar dados de equipamentos.", "error");
+                  } finally {
+                    setIsLoading(false);
+                  }
                 };
-                fetchEquipmentCounts();
-              }, [userId, showToast]);
+
+                fetchAndCountEquipment();
+              }, [showToast]); // Run once on mount and when showToast changes (though not strictly necessary for this effect)
+
 
               React.useEffect(() => {
                 if (!userId) return;
@@ -1412,7 +1614,8 @@
                   setIsLoading(true);
                   let queryBuilder = supabase
                     .from('trocasFilial')
-                    .select('*')
+                    .select('*') // Seleciona todas as colunas para exportação
+                    // .is('ending_date', null) // REMOVIDO: Não filtrar por ending_date para a visualização completa
                     .eq('created_by_username', userId);
 
                   // Apply date filter
@@ -1445,12 +1648,13 @@
               };
 
               const exportToCSV = () => {
-                const headers = ["Filial", "Placa Antiga", "Placa Nova", "Data da Alteração"];
+                // Modified headers and rows for CSV export
+                const headers = ["Filial", "Placa", "Data de Início", "Data Final"]; // Adicionado Data Final
                 const rows = registros.map(registro => [
-                  registro.newBranch, // Assuming newBranch is the 'filial' in this context
-                  registro.plate, // Assuming plate is the 'placa antiga'
-                  registro.plate, // No 'placa nova' in trocasFilial, using plate again for now
-                  registro.executionDate
+                  registro.newBranch,
+                  registro.plate,
+                  registro.executionDate, // Data de Início
+                  registro.ending_date || '' // Data Final (vazio se for null)
                 ]);
 
                 let csvContent = headers.map(header => `"${header}"`).join(";") + "\n";
@@ -1471,11 +1675,14 @@
                 }
               };
 
-              const filteredRegistros = registros.filter(registro =>
-                registro.newBranch.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              // Filtragem para a visualização na tabela do dashboard (ainda mostrando apenas registros ativos)
+              const filteredRegistrosForDisplay = registros.filter(registro =>
+                registro.ending_date === null && // Only show active records in the table
+                (registro.newBranch.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 registro.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                registro.executionDate.toLowerCase().includes(searchTerm.toLowerCase())
+                registro.executionDate.toLowerCase().includes(searchTerm.toLowerCase()))
               );
+
 
               // Calculate total equipment for chart
               const totalEquipment = Object.values(equipmentCounts).reduce((sum, count) => sum + count, 0);
@@ -1646,25 +1853,23 @@
                       React.createElement('thead', { className: "bg-gray-100" },
                         React.createElement('tr', null,
                           React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Filial"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Placa Antiga"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Placa Nova"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Data Alteração")
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Placa"),
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Data de Alteração")
                         )
                       ),
                       React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
-                        isLoading && filteredRegistros.length === 0 ? (
+                        isLoading && filteredRegistrosForDisplay.length === 0 ? (
                             React.createElement('tr', null,
-                                React.createElement('td', { colSpan: "4", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando registros...")
+                                React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando registros...")
                             )
-                        ) : filteredRegistros.length === 0 ? (
+                        ) : filteredRegistrosForDisplay.length === 0 ? (
                           React.createElement('tr', null,
-                            React.createElement('td', { colSpan: "4", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum registro encontrado.")
+                            React.createElement('td', { colSpan: "3", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum registro encontrado.")
                           )
                         ) : (
-                          filteredRegistros.map((registro) => (
+                          filteredRegistrosForDisplay.map((registro) => (
                             React.createElement('tr', { key: registro.id, className: "hover:bg-gray-50 transition-colors duration-150" },
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" }, registro.newBranch),
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.plate),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.plate),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.executionDate)
                             )
