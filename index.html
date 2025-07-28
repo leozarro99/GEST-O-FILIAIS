@@ -1718,8 +1718,7 @@
                     .from('trocasFilial')
                     .select('*') // Seleciona todas as colunas para exportação
                     .is('ending_date', null) // Filtrar apenas registros ativos para o dashboard
-                    .eq('created_by_username', userId);
-
+                
                   // Apply user filter
                   if (selectedUser !== 'Todos os Responsáveis') {
                     queryBuilder = queryBuilder.eq('created_by_username', selectedUser);
