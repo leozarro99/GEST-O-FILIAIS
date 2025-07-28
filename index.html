@@ -204,24 +204,25 @@
 
                 let role = null;
 
-                // REMOVIDO: Lógica de login hardcoded para 'admin'
                 try {
-                    console.log("Tentando login com username:", username.toLowerCase(), "e password:", password); // Log de depuração
-                    // Query the public app_users table for authentication
+                    console.log("Tentando login com username:", username.toLowerCase(), "e password:", password);
                     const { data, error: fetchError } = await supabase
-                      .from('app_users') // Supabase table name
+                      .from('app_users')
                       .select('*')
                       .eq('username', username.toLowerCase())
-                      .eq('password', password); // IMPORTANT: Em produção, hash de senhas é crucial!
+                      .eq('password', password);
 
-                    console.log("Resultado da consulta Supabase (data):", data); // Log de depuração
-                    console.log("Resultado da consulta Supabase (erro):", fetchError); // Log de depuração
+                    console.log("Resultado da consulta Supabase (data):", data);
+                    console.log("Resultado da consulta Supabase (erro):", fetchError);
 
                     if (fetchError) {
                         console.error("Erro ao buscar usuário no Supabase:", fetchError);
                         setError("Erro ao autenticar. Por favor, tente novamente.");
                     } else if (data && data.length > 0) {
                         role = data[0].role;
+                        // Salvar informações do usuário no localStorage após login bem-sucedido
+                        localStorage.setItem('userRole', role);
+                        localStorage.setItem('userId', username.toLowerCase()); // Usar o username como userId
                     } else {
                         setError('Usuário ou senha inválidos.');
                     }
@@ -232,9 +233,8 @@
 
 
                 if (role) {
-                  onLogin(role, username); // Pass username as userId for data partitioning
+                  onLogin(role, username.toLowerCase()); // Pass username as userId for data partitioning
                 } else {
-                  // Se o erro já foi definido acima (usuário/senha inválidos ou erro Supabase), não sobrescreva
                   if (!error) {
                     setError('Usuário ou senha inválidos.');
                   }
@@ -248,7 +248,6 @@
                     // TERC SISTEMAS title
                     React.createElement('div', { className: "flex flex-col items-center justify-center mb-6" },
                         React.createElement('h2', { className: "text-4xl font-extrabold text-blue-600 text-center" }, "TERC SISTEMAS")
-                        // Description removed from here
                     ),
                     error && (
                       React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
@@ -1886,7 +1885,6 @@
             function EmptyPanel() {
               return (
                 React.createElement('div', { className: "flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] bg-white p-6 rounded-xl shadow-lg text-center" },
-                  // Removed LucideIcon for 'Building' again
                   React.createElement('h2', { className: "text-4xl font-extrabold text-blue-600 text-center mb-4" }, "SISTEMA DE GERENCIAMENTO"),
                   React.createElement('p', { className: "text-lg text-gray-700 mt-4 max-w-2xl leading-relaxed" }, "O SISTEMA DE GERENCIAMENTO é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações.")
                 )
@@ -1896,8 +1894,9 @@
 
             // Componente principal da Aplicação
             function App() {
-              const [userId, setUserId] = React.useState(null); // This will now store the username
-              const [userRole, setUserRole] = React.useState(null);
+              // Inicializa userId e userRole com valores do localStorage, se existirem
+              const [userId, setUserId] = React.useState(localStorage.getItem('userId'));
+              const [userRole, setUserRole] = React.useState(localStorage.getItem('userRole'));
               const [isAuthReady, setIsAuthReady] = React.useState(false);
               const [currentPage, setCurrentPage] = React.useState('emptyPanel');
               const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
@@ -1917,15 +1916,28 @@
                   setToastType(null);
               };
 
-
-              // Simulate Firebase Auth state for React Context
+              // useEffect para verificar o localStorage na montagem do componente
               React.useEffect(() => {
-                // In a real Supabase app, you would use supabase.auth.onAuthStateChange
-                // For this direct HTML conversion, we assume authentication happens via LoginPage
-                // and userId/userRole are set directly by onLogin.
-                // We set isAuthReady to true immediately to allow LoginPage to render.
-                setIsAuthReady(true);
+                const storedUserRole = localStorage.getItem('userRole');
+                const storedUserId = localStorage.getItem('userId');
+
+                if (storedUserRole && storedUserId) {
+                  setUserRole(storedUserRole);
+                  setUserId(storedUserId);
+                  // Se houver dados no localStorage, o usuário é considerado autenticado
+                  // e podemos definir isAuthReady como true.
+                  setIsAuthReady(true);
+                  // Opcional: Redirecionar para o dashboard ou uma página padrão após o refresh
+                  // if (currentPage === 'login') { // Evita redirecionar se já estiver em outra página
+                  //   setCurrentPage('dashboard');
+                  // }
+                } else {
+                  // Se não houver dados no localStorage, o usuário não está autenticado
+                  setIsAuthReady(true); // Indica que a verificação de autenticação inicial foi concluída
+                  setCurrentPage('login'); // Garante que a tela de login seja exibida
+                }
               }, []);
+
 
               const handleLogin = (role, username) => {
                 setUserRole(role);
@@ -1935,7 +1947,9 @@
               };
 
               const handleLogout = () => {
-                // In a real Supabase app, you would call supabase.auth.signOut() here
+                // Limpar informações do usuário do localStorage
+                localStorage.removeItem('userRole');
+                localStorage.removeItem('userId');
                 setUserRole(null);
                 setUserId(null);
                 setCurrentPage('login');
@@ -1966,6 +1980,7 @@
                 );
               }
 
+              // Se isAuthReady for true, mas userRole ainda for null, significa que não há sessão persistida
               if (!userRole) {
                 return React.createElement(LoginPage, { onLogin: handleLogin });
               }
