@@ -721,38 +721,11 @@
               const [newBrand, setNewBrand] = React.useState('');
               const [newChassis, setNewChassis] = React.useState('');
               const [newEquipmentType, setNewEquipmentType] = React.useState('');
-              const [equipmentList, setEquipmentList] = React.useState([]);
               const [error, setError] = React.useState(null);
               const [isLoading, setIsLoading] = React.useState(false);
-              const [showConfirmModal, setShowConfirmModal] = React.useState(false);
-              const [equipmentToDelete, setEquipmentToDelete] = React.useState(null);
-              const [editingEquipment, setEditingEquipment] = React.useState(null);
-              const [originalEquipment, setOriginalEquipment] = React.useState(null);
-              const [searchTerm, setSearchTerm] = React.useState('');
-              const [showForm, setShowForm] = React.useState(false); // New state to control form visibility
+              const [showForm, setShowForm] = React.useState(false); // State to control form visibility
 
               const equipmentTypes = ["BOMBA LANÇA", "BOMBA", "BETONEIRA"];
-
-              React.useEffect(() => {
-                const fetchEquipment = async () => {
-                  setIsLoading(true);
-                  const { data, error: fetchError } = await supabase
-                    .from('equipamentos')
-                    .select('*, model, brand, chassis')
-                    .order('created_at', { ascending: false });
-
-                  if (fetchError) {
-                    console.error("Erro ao buscar equipamentos no Supabase:", fetchError);
-                    setError("Erro ao carregar equipamentos. Por favor, recarregue a página.");
-                    showToast("Erro ao carregar equipamentos.", "error");
-                  } else {
-                    setEquipmentList(data);
-                    setError(null);
-                  }
-                  setIsLoading(false);
-                };
-                fetchEquipment();
-              }, [showToast]);
 
               const handleAddEquipment = async (e) => {
                 e.preventDefault();
@@ -785,14 +758,6 @@
                   setNewEquipmentType('');
                   setError(null);
                   showToast("Equipamento adicionado com sucesso!", "success");
-                  // Re-fetch data
-                  const { data, error: fetchError } = await supabase
-                    .from('equipamentos')
-                    .select('*, model, brand, chassis')
-                    .order('created_at', { ascending: false });
-                  if (fetchError) console.error("Erro ao re-buscar equipamentos:", fetchError);
-                  else setEquipmentList(data);
-
                 } catch (e) {
                   console.error("Erro ao adicionar equipamento:", e);
                   setError("Erro ao adicionar equipamento. Tente novamente.");
@@ -801,117 +766,50 @@
                 setIsLoading(false);
               };
 
-              const handleEditClick = (equipment) => {
-                setEditingEquipment({ ...equipment });
-                setOriginalEquipment({ ...equipment });
-              };
-
-              const handleCancelEdit = () => {
-                setEditingEquipment(null);
-                setOriginalEquipment(null);
-                setEquipmentList(prevEquipment =>
-                    prevEquipment.map(eq =>
-                        eq.id === originalEquipment.id ? originalEquipment : eq
-                    )
-                );
-              };
-
-              const handleFieldChange = (e, fieldName) => {
-                setEditingEquipment(prev => ({
-                    ...prev,
-                    [fieldName]: e.target.value
-                }));
-              };
-
-              const handleUpdateEquipment = async () => {
-                if (!editingEquipment) return;
-
-                if (!editingEquipment.plate.trim() || !editingEquipment.model.trim() || !editingEquipment.brand.trim() || !editingEquipment.chassis.trim() || !editingEquipment.type) {
-                    setError("Por favor, preencha todos os campos: Placa, Modelo, Marca, Chassi e Tipo de Equipamento.");
-                    showToast("Preencha todos os campos.", "error");
-                    return;
-                }
-
+              const exportAllEquipmentToCSV = async () => {
                 setIsLoading(true);
                 try {
-                    const { error: updateError } = await supabase
-                        .from('equipamentos')
-                        .update({
-                            plate: editingEquipment.plate.trim(),
-                            model: editingEquipment.model.trim(),
-                            brand: editingEquipment.brand.trim(),
-                            chassis: editingEquipment.chassis.trim(),
-                            type: editingEquipment.type
-                        })
-                        .eq('id', editingEquipment.id);
-
-                    if (updateError) throw updateError;
-
-                    showToast("Equipamento atualizado com sucesso!", "success");
-                    setEditingEquipment(null);
-                    setOriginalEquipment(null);
-                    // Re-fetch data to ensure consistency
                     const { data, error: fetchError } = await supabase
                         .from('equipamentos')
-                        .select('*, model, brand, chassis')
-                        .order('created_at', { ascending: false });
-                    if (fetchError) console.error("Erro ao re-buscar equipamentos:", fetchError);
-                    else setEquipmentList(data);
+                        .select('plate, model, brand, chassis, type')
+                        .order('plate', { ascending: true }); // Order by plate for consistency
 
+                    if (fetchError) throw fetchError;
+
+                    const headers = ["Placa", "Modelo", "Marca", "Chassi", "Tipo"];
+                    const rows = data.map(equipment => [
+                        equipment.plate,
+                        equipment.model,
+                        equipment.brand,
+                        equipment.chassis,
+                        equipment.type
+                    ]);
+
+                    let csvContent = headers.map(header => `"${header}"`).join(";") + "\n";
+                    rows.forEach(row => {
+                        csvContent += row.map(field => `"${field}"`).join(";") + "\n";
+                    });
+
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement("a");
+                    if (link.download !== undefined) {
+                        const url = URL.createObjectURL(blob);
+                        link.setAttribute("href", url);
+                        link.setAttribute("download", "equipamentos_completo.csv");
+                        link.style.visibility = 'hidden';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                    showToast("Dados de equipamentos exportados com sucesso!", "success");
                 } catch (e) {
-                    console.error("Erro ao atualizar equipamento:", e);
-                    setError("Erro ao atualizar equipamento.");
-                    showToast("Erro ao atualizar equipamento.", "error");
+                    console.error("Erro ao exportar equipamentos:", e);
+                    setError("Erro ao exportar dados de equipamentos.");
+                    showToast("Erro ao exportar dados.", "error");
                 } finally {
                     setIsLoading(false);
                 }
               };
-
-              const confirmDeleteEquipment = (equipment) => {
-                setEquipmentToDelete(equipment);
-                setShowConfirmModal(true);
-              };
-
-              const handleDeleteEquipment = async () => {
-                if (!equipmentToDelete) return;
-
-                setIsLoading(true);
-                setShowConfirmModal(false); // Close modal
-                try {
-                  const { error: deleteError } = await supabase
-                    .from('equipamentos')
-                    .delete()
-                    .eq('id', equipmentToDelete.id);
-
-                  if (deleteError) throw deleteError;
-
-                  showToast("Equipamento excluído com sucesso!", "success");
-                  // Re-fetch data
-                  const { data, error: fetchError } = await supabase
-                    .from('equipamentos')
-                    .select('*, model, brand, chassis')
-                    .order('created_at', { ascending: false });
-                  if (fetchError) console.error("Erro ao re-buscar equipamentos:", fetchError);
-                  else setEquipmentList(data);
-
-                } catch (e) {
-                  console.error("Erro ao deletar equipamento:", e);
-                  setError("Erro ao deletar equipamento. Tente novamente.");
-                  showToast("Erro ao excluir equipamento.", "error");
-                } finally {
-                    setIsLoading(false);
-                    setEquipmentToDelete(null);
-                }
-              };
-
-              // Filtered list based on search term (updated to include new fields in search)
-              const filteredEquipmentList = equipmentList.filter(equipment =>
-                  equipment.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  equipment.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  equipment.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  equipment.chassis.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  equipment.type.toLowerCase().includes(searchTerm.toLowerCase())
-              );
 
               return (
                 React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg" },
@@ -950,7 +848,7 @@
                           className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                           placeholder: "Ex: ABC-1234",
                           required: true,
-                          disabled: isLoading || editingEquipment
+                          disabled: isLoading
                         })
                       ),
                       React.createElement('div', null,
@@ -963,7 +861,7 @@
                           className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                           placeholder: "Ex: XZ-2000",
                           required: true,
-                          disabled: isLoading || editingEquipment
+                          disabled: isLoading
                         })
                       ),
                       React.createElement('div', null,
@@ -976,7 +874,7 @@
                           className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                           placeholder: "Ex: Volvo",
                           required: true,
-                          disabled: isLoading || editingEquipment
+                          disabled: isLoading
                         })
                       ),
                       React.createElement('div', null,
@@ -989,7 +887,7 @@
                           className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                           placeholder: "Ex: 9BWZZZ1234567890",
                           required: true,
-                          disabled: isLoading || editingEquipment
+                          disabled: isLoading
                         })
                       ),
                       React.createElement('div', null,
@@ -1000,7 +898,7 @@
                           onChange: (e) => setNewEquipmentType(e.target.value),
                           className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
                           required: true,
-                          disabled: isLoading || editingEquipment
+                          disabled: isLoading
                         },
                           React.createElement('option', { value: "" }, "Selecione um tipo"),
                           equipmentTypes.map((type) => (
@@ -1012,7 +910,7 @@
                         React.createElement('button', {
                           type: "submit",
                           className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
-                          disabled: isLoading || editingEquipment
+                          disabled: isLoading
                         },
                           isLoading ? (
                             React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
@@ -1037,172 +935,17 @@
                     )
                   ),
 
-                  React.createElement('div', { className: "mb-4" },
-                      React.createElement('label', { htmlFor: "searchEquipment", className: "block text-sm font-medium text-gray-700 mb-1" }, "Buscar:"),
-                      React.createElement('div', { className: "relative" },
-                          React.createElement('input', {
-                              type: "text",
-                              id: "searchEquipment",
-                              value: searchTerm,
-                              onChange: (e) => setSearchTerm(e.target.value),
-                              className: "block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                              placeholder: "Buscar por placa, modelo, marca, chassi ou tipo...",
-                              disabled: isLoading
-                          }),
-                          React.createElement('div', { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" },
-                              React.createElement(LucideIcon, { name: "Search", className: "h-5 w-5 text-gray-400" })
-                          )
-                      )
-                  ),
-                  React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
-                    React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
-                      React.createElement('thead', { className: "bg-gray-100" },
-                        React.createElement('tr', null,
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Placa"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Modelo"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Marca"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Chassi"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Tipo"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
-                        )
-                      ),
-                      React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
-                        isLoading && filteredEquipmentList.length === 0 ? (
-                            React.createElement('tr', null,
-                                React.createElement('td', { colSpan: "6", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando equipamentos...")
-                            )
-                        ) : filteredEquipmentList.length === 0 ? (
-                          React.createElement('tr', null,
-                            React.createElement('td', { colSpan: "6", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum equipamento cadastrado.")
-                          )
-                        ) : (
-                          filteredEquipmentList.map((equipment) => (
-                            React.createElement('tr', { key: equipment.id, className: "hover:bg-gray-50 transition-colors duration-150" },
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" },
-                                editingEquipment && editingEquipment.id === equipment.id ? (
-                                    React.createElement('input', {
-                                        type: "text",
-                                        value: editingEquipment.plate,
-                                        onChange: (e) => handleFieldChange(e, 'plate'),
-                                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
-                                        disabled: isLoading
-                                    })
-                                ) : (
-                                    React.createElement('span', null, equipment.plate)
-                                )
-                              ),
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" },
-                                editingEquipment && editingEquipment.id === equipment.id ? (
-                                    React.createElement('input', {
-                                        type: "text",
-                                        value: editingEquipment.model,
-                                        onChange: (e) => handleFieldChange(e, 'model'),
-                                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
-                                        disabled: isLoading
-                                    })
-                                ) : (
-                                    React.createElement('span', null, equipment.model || 'N/A')
-                                )
-                              ),
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" },
-                                editingEquipment && editingEquipment.id === equipment.id ? (
-                                    React.createElement('input', {
-                                        type: "text",
-                                        value: editingEquipment.brand,
-                                        onChange: (e) => handleFieldChange(e, 'brand'),
-                                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
-                                        disabled: isLoading
-                                    })
-                                ) : (
-                                    React.createElement('span', null, equipment.brand || 'N/A')
-                                )
-                              ),
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" },
-                                editingEquipment && editingEquipment.id === equipment.id ? (
-                                    React.createElement('input', {
-                                        type: "text",
-                                        value: editingEquipment.chassis,
-                                        onChange: (e) => handleFieldChange(e, 'chassis'),
-                                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
-                                        disabled: isLoading
-                                    })
-                                ) : (
-                                    React.createElement('span', null, equipment.chassis || 'N/A')
-                                )
-                              ),
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" },
-                                editingEquipment && editingEquipment.id === equipment.id ? (
-                                    React.createElement('select', {
-                                        value: editingEquipment.type,
-                                        onChange: (e) => handleFieldChange(e, 'type'),
-                                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
-                                        required: true,
-                                        disabled: isLoading
-                                    },
-                                        equipmentTypes.map((type) => (
-                                            React.createElement('option', { key: type, value: type }, type)
-                                        ))
-                                    )
-                                ) : (
-                                    React.createElement('span', null, equipment.type)
-                                )
-                              ),
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-right text-sm font-medium" },
-                                editingEquipment && editingEquipment.id === equipment.id ? (
-                                    React.createElement(React.Fragment, null,
-                                        React.createElement('button', {
-                                            onClick: handleUpdateEquipment,
-                                            className: "text-green-600 hover:text-green-800 transition-colors duration-150 mr-2",
-                                            title: "Salvar",
-                                            disabled: isLoading
-                                        },
-                                            React.createElement(LucideIcon, { name: "Save", className: "h-5 w-5 inline-block align-middle" }),
-                                            React.createElement('span', { className: "ml-1" }, "Salvar")
-                                        ),
-                                        React.createElement('button', {
-                                            onClick: handleCancelEdit,
-                                            className: "text-gray-600 hover:text-gray-800 transition-colors duration-150",
-                                            title: "Cancelar",
-                                            disabled: isLoading
-                                        },
-                                            React.createElement(LucideIcon, { name: "Ban", className: "h-5 w-5 inline-block align-middle" }),
-                                            React.createElement('span', { className: "ml-1" }, "Cancelar")
-                                        )
-                                    )
-                                ) : (
-                                    React.createElement(React.Fragment, null,
-                                        React.createElement('button', {
-                                            onClick: () => handleEditClick(equipment),
-                                            className: "text-blue-600 hover:text-blue-800 transition-colors duration-150 mr-2",
-                                            title: "Editar",
-                                            disabled: isLoading
-                                        },
-                                            React.createElement(LucideIcon, { name: "Edit", className: "h-5 w-5 inline-block align-middle" }),
-                                            React.createElement('span', { className: "ml-1" }, "Editar")
-                                        ),
-                                        React.createElement('button', {
-                                            onClick: () => confirmDeleteEquipment(equipment),
-                                            className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
-                                            title: "Excluir Equipamento",
-                                            disabled: isLoading
-                                        },
-                                            React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5 inline-block align-middle" }),
-                                            React.createElement('span', { className: "ml-1" }, "Excluir")
-                                        )
-                                    )
-                                )
-                              )
-                            )
-                          ))
-                        )
-                      )
+                  // New Export CSV Button
+                  React.createElement('div', { className: "flex justify-center mt-6" },
+                    React.createElement('button', {
+                      onClick: exportAllEquipmentToCSV,
+                      className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out transform hover:scale-105",
+                      disabled: isLoading
+                    },
+                      React.createElement(LucideIcon, { name: "FileText", className: "mr-2 h-5 w-5" }),
+                      "Exportar Todos os Equipamentos (CSV)"
                     )
-                  ),
-                  showConfirmModal && React.createElement(ConfirmationModal, {
-                      message: `Tem certeza que deseja excluir o equipamento de placa "${equipmentToDelete?.plate}"?`,
-                      onConfirm: handleDeleteEquipment,
-                      onCancel: () => setShowConfirmModal(false)
-                  })
+                  )
                 )
               );
             }
@@ -2058,7 +1801,7 @@
                           isLoading ? (
                             React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
                               React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
-                              React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
+                              React.createElement('path', { className: "opacity-75", fill: "currentColor", d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
                           )
                         ) : (
                           React.createElement(LucideIcon, { name: "Search", className: "mr-2 h-5 w-5" })
