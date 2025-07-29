@@ -189,8 +189,6 @@
               const [password, setPassword] = React.useState('');
               const [error, setError] = React.useState('');
               const [isLoggingIn, setIsLoggingIn] = React.useState(false);
-              // Logo URL
-              const logoUrl = "https://gfivmnnysomfwrffybeh.supabase.co/storage/v1/object/public/logo//LOGO%20TERSYS.png";
 
               const handleLogin = async (e) => {
                 e.preventDefault();
@@ -247,10 +245,14 @@
 
               return (
                 React.createElement('div', { className: "flex items-center justify-center min-h-screen bg-gray-100 font-sans" },
-                  React.createElement('div', { className: "bg-white p-8 rounded-xl shadow-lg w-full max-w-xs" }, // Changed max-w-md to max-w-xs
-                    // Logo
+                  React.createElement('div', { className: "bg-white p-8 rounded-xl shadow-lg w-full max-w-md" },
+                    // Logo TERSYS
                     React.createElement('div', { className: "flex flex-col items-center justify-center mb-6" },
-                        React.createElement('img', { src: logoUrl, alt: "Logo TERSYS", className: "h-64 mb-4 object-contain" }) // Increased size further
+                        React.createElement('img', {
+                            src: "https://gfivmnnysomfwrffybeh.supabase.co/storage/v1/object/public/logo//LOGO_TERSYS-removebg-preview%20(1).png",
+                            alt: "TERSYS Logo",
+                            className: "h-32 w-auto mb-4" // Ajuste o tamanho conforme necessário
+                        })
                     ),
                     error && (
                       React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
@@ -1733,7 +1735,7 @@
                       .from('filiais')
                       .select('name, responsible');
                     if (fetchBranchesError) throw fetchBranchesError;
-                    setAvailableBranches(['Todos as Filiais', ...branchesData.map(b => b.name)]);
+                    setAvailableBranches(['Todas as Filiais', ...branchesData.map(b => b.name)]);
                     setAllBranches(branchesData); // Armazenar todas as filiais para uso posterior
 
                     // Buscar todos os equipamentos para mapear placas para tipos (incluindo novos campos)
@@ -1890,7 +1892,7 @@
                             tipoEquipamento: equipment ? equipment.type : 'N/A',
                             modeloEquipamento: equipment ? equipment.model : 'N/A', // Adicionado
                             marcaEquipamento: equipment ? equipment.brand : 'N/A',   // Adicionado
-                            chassiEquipamento: equipment ? equipment.chassi : 'N/A' // Adicionado
+                            chassiEquipamento: equipment ? equipment.chassis : 'N/A' // Adicionado
                         };
                     }).filter(registro => {
                         // Aplicar filtro de tipo de equipamento após o mapeamento
@@ -2295,13 +2297,10 @@
 
             // Componente para a tela vazia inicial (agora com visual e a descrição)
             function EmptyPanel() {
-              const logoUrl = "https://gfivmnnysomfwrffybeh.supabase.co/storage/v1/object/public/logo//LOGO%20TERSYS.png";
-              // Removed the newImageUrl variable and the corresponding <img> tag
-
               return (
-                React.createElement('div', { className: "flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] bg-white p-6 rounded-xl shadow-lg text-center" }, // Changed justify-between to justify-center as the bottom image is removed
-                  React.createElement('img', { src: logoUrl, alt: "Logo TERSYS", className: "h-96 mt-6 object-contain" }) // Added mt-6 for spacing
-                  // Removed the <img> tag for the "result-not-found.jpeg" image
+                React.createElement('div', { className: "flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] bg-white p-6 rounded-xl shadow-lg text-center" },
+                  React.createElement('h2', { className: "text-4xl font-extrabold text-blue-600 text-center mb-4" }, "SISTEMA DE GERENCIAMENTO"),
+                  React.createElement('p', { className: "text-lg text-gray-700 mt-4 max-w-2xl leading-relaxed" }, "O SISTEMA DE GERENCIAMENTO é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações.")
                 )
               );
             }
@@ -2321,8 +2320,6 @@
               const [error, setError] = React.useState(null);
               const [toastMessage, setToastMessage] = React.useState(null);
               const [toastType, setToastType] = React.useState(null);
-              // Logo URL
-              const logoUrl = "https://gfivmnnysomfwrffybeh.supabase.co/storage/v1/object/public/logo//LOGO%20TERSYS.png";
 
               const showToast = (message, type) => {
                   setToastMessage(message);
@@ -2549,9 +2546,7 @@
                       React.createElement('button', { className: "text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors", onClick: toggleSidebar },
                         React.createElement(LucideIcon, { name: "Menu", className: "h-6 w-6" })
                       ),
-                      React.createElement('div', { className: "flex items-center justify-center flex-grow" }, // Container for logo
-                        React.createElement('h1', { className: "text-4xl font-bold text-blue-600" }, "TERSYS") // Always display "TERSYS" text, now larger and blue
-                      )
+                      React.createElement('h1', { className: "text-4xl font-extrabold text-blue-600 text-center flex-grow" }, "TERSYS")
                     ),
 
                     error && (
