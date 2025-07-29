@@ -717,9 +717,9 @@
 
             function EquipmentManagement({ userId, showToast }) {
               const [newPlate, setNewPlate] = React.useState('');
-              const [newModel, setNewModel] = React.useState(''); // Novo estado para Modelo
-              const [newBrand, setNewBrand] = React.useState(''); // Novo estado para Marca
-              const [newChassis, setNewChassis] = React.useState(''); // Novo estado para Chassi
+              const [newModel, setNewModel] = React.useState('');
+              const [newBrand, setNewBrand] = React.useState('');
+              const [newChassis, setNewChassis] = React.useState('');
               const [newEquipmentType, setNewEquipmentType] = React.useState('');
               const [equipmentList, setEquipmentList] = React.useState([]);
               const [error, setError] = React.useState(null);
@@ -729,16 +729,16 @@
               const [editingEquipment, setEditingEquipment] = React.useState(null);
               const [originalEquipment, setOriginalEquipment] = React.useState(null);
               const [searchTerm, setSearchTerm] = React.useState('');
+              const [showForm, setShowForm] = React.useState(false); // New state to control form visibility
 
               const equipmentTypes = ["BOMBA LANÇA", "BOMBA", "BETONEIRA"];
 
               React.useEffect(() => {
                 const fetchEquipment = async () => {
                   setIsLoading(true);
-                  // Atualizado para selecionar todos os novos campos
                   const { data, error: fetchError } = await supabase
                     .from('equipamentos')
-                    .select('*, model, brand, chassis') // Inclui os novos campos
+                    .select('*, model, brand, chassis')
                     .order('created_at', { ascending: false });
 
                   if (fetchError) {
@@ -756,7 +756,6 @@
 
               const handleAddEquipment = async (e) => {
                 e.preventDefault();
-                // Validação para todos os campos
                 if (!newPlate.trim() || !newModel.trim() || !newBrand.trim() || !newChassis.trim() || !newEquipmentType) {
                   setError("Por favor, preencha todos os campos: Placa, Modelo, Marca, Chassi e Tipo de Equipamento.");
                   showToast("Preencha todos os campos.", "error");
@@ -769,9 +768,9 @@
                     .insert([
                       {
                         plate: newPlate.trim(),
-                        model: newModel.trim(),    // Salva o modelo
-                        brand: newBrand.trim(),    // Salva a marca
-                        chassis: newChassis.trim(), // Salva o chassi
+                        model: newModel.trim(),
+                        brand: newBrand.trim(),
+                        chassis: newChassis.trim(),
                         type: newEquipmentType,
                         created_by_username: userId
                       }
@@ -789,7 +788,7 @@
                   // Re-fetch data
                   const { data, error: fetchError } = await supabase
                     .from('equipamentos')
-                    .select('*, model, brand, chassis') // Inclui os novos campos ao re-buscar
+                    .select('*, model, brand, chassis')
                     .order('created_at', { ascending: false });
                   if (fetchError) console.error("Erro ao re-buscar equipamentos:", fetchError);
                   else setEquipmentList(data);
@@ -827,7 +826,6 @@
               const handleUpdateEquipment = async () => {
                 if (!editingEquipment) return;
 
-                // Validação para todos os campos editáveis
                 if (!editingEquipment.plate.trim() || !editingEquipment.model.trim() || !editingEquipment.brand.trim() || !editingEquipment.chassis.trim() || !editingEquipment.type) {
                     setError("Por favor, preencha todos os campos: Placa, Modelo, Marca, Chassi e Tipo de Equipamento.");
                     showToast("Preencha todos os campos.", "error");
@@ -840,9 +838,9 @@
                         .from('equipamentos')
                         .update({
                             plate: editingEquipment.plate.trim(),
-                            model: editingEquipment.model.trim(),    // Atualiza o modelo
-                            brand: editingEquipment.brand.trim(),    // Atualiza a marca
-                            chassis: editingEquipment.chassis.trim(), // Atualiza o chassi
+                            model: editingEquipment.model.trim(),
+                            brand: editingEquipment.brand.trim(),
+                            chassis: editingEquipment.chassis.trim(),
                             type: editingEquipment.type
                         })
                         .eq('id', editingEquipment.id);
@@ -855,7 +853,7 @@
                     // Re-fetch data to ensure consistency
                     const { data, error: fetchError } = await supabase
                         .from('equipamentos')
-                        .select('*, model, brand, chassis') // Inclui os novos campos ao re-buscar
+                        .select('*, model, brand, chassis')
                         .order('created_at', { ascending: false });
                     if (fetchError) console.error("Erro ao re-buscar equipamentos:", fetchError);
                     else setEquipmentList(data);
@@ -891,7 +889,7 @@
                   // Re-fetch data
                   const { data, error: fetchError } = await supabase
                     .from('equipamentos')
-                    .select('*, model, brand, chassis') // Inclui os novos campos ao re-buscar
+                    .select('*, model, brand, chassis')
                     .order('created_at', { ascending: false });
                   if (fetchError) console.error("Erro ao re-buscar equipamentos:", fetchError);
                   else setEquipmentList(data);
@@ -924,93 +922,121 @@
                       React.createElement('span', { className: "block sm:inline" }, " ", error)
                     )
                   ),
-                  React.createElement('form', { onSubmit: handleAddEquipment, className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" },
-                    React.createElement('div', null,
-                      React.createElement('label', { htmlFor: "newPlate", className: "block text-sm font-medium text-gray-700 mb-1" }, "Placa"),
-                      React.createElement('input', {
-                        type: "text",
-                        id: "newPlate",
-                        value: newPlate,
-                        onChange: (e) => setNewPlate(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                        placeholder: "Ex: ABC-1234",
-                        required: true,
-                        disabled: isLoading || editingEquipment
-                      })
-                    ),
-                    React.createElement('div', null,
-                      React.createElement('label', { htmlFor: "newModel", className: "block text-sm font-medium text-gray-700 mb-1" }, "Modelo"),
-                      React.createElement('input', {
-                        type: "text",
-                        id: "newModel",
-                        value: newModel,
-                        onChange: (e) => setNewModel(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                        placeholder: "Ex: XZ-2000",
-                        required: true,
-                        disabled: isLoading || editingEquipment
-                      })
-                    ),
-                    React.createElement('div', null,
-                      React.createElement('label', { htmlFor: "newBrand", className: "block text-sm font-medium text-gray-700 mb-1" }, "Marca"),
-                      React.createElement('input', {
-                        type: "text",
-                        id: "newBrand",
-                        value: newBrand,
-                        onChange: (e) => setNewBrand(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                        placeholder: "Ex: Volvo",
-                        required: true,
-                        disabled: isLoading || editingEquipment
-                      })
-                    ),
-                    React.createElement('div', null,
-                      React.createElement('label', { htmlFor: "newChassis", className: "block text-sm font-medium text-gray-700 mb-1" }, "Chassi"),
-                      React.createElement('input', {
-                        type: "text",
-                        id: "newChassis",
-                        value: newChassis,
-                        onChange: (e) => setNewChassis(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                        placeholder: "Ex: 9BWZZZ1234567890",
-                        required: true,
-                        disabled: isLoading || editingEquipment
-                      })
-                    ),
-                    React.createElement('div', null,
-                      React.createElement('label', { htmlFor: "newEquipmentType", className: "block text-sm font-medium text-gray-700 mb-1" }, "Tipo de Equipamento"),
-                      React.createElement('select', {
-                        id: "newEquipmentType",
-                        value: newEquipmentType,
-                        onChange: (e) => setNewEquipmentType(e.target.value),
-                        className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                        required: true,
-                        disabled: isLoading || editingEquipment
-                      },
-                        React.createElement('option', { value: "" }, "Selecione um tipo"),
-                        equipmentTypes.map((type) => (
-                          React.createElement('option', { key: type, value: type }, type)
-                        ))
-                      )
-                    ),
-                    React.createElement('div', { className: "lg:col-span-3 flex justify-center" },
+
+                  // Button to show the registration form
+                  !showForm && (
+                    React.createElement('div', { className: "flex justify-center mb-6" },
                       React.createElement('button', {
-                        type: "submit",
+                        onClick: () => setShowForm(true),
                         className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
-                        disabled: isLoading || editingEquipment
+                        disabled: isLoading
                       },
-                        isLoading ? (
-                          React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
-                            React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
-                            React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
-                          )
-                        ) : (
-                          React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
-                        ),
-                        isLoading ? 'Adicionando...' : 'Adicionar Equipamento'
+                        React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" }),
+                        "Cadastrar Novo Equipamento"
                       )
                     )
                   ),
+
+                  // Registration form, conditionally rendered
+                  showForm && (
+                    React.createElement('form', { onSubmit: handleAddEquipment, className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50" },
+                      React.createElement('div', null,
+                        React.createElement('label', { htmlFor: "newPlate", className: "block text-sm font-medium text-gray-700 mb-1" }, "Placa"),
+                        React.createElement('input', {
+                          type: "text",
+                          id: "newPlate",
+                          value: newPlate,
+                          onChange: (e) => setNewPlate(e.target.value),
+                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
+                          placeholder: "Ex: ABC-1234",
+                          required: true,
+                          disabled: isLoading || editingEquipment
+                        })
+                      ),
+                      React.createElement('div', null,
+                        React.createElement('label', { htmlFor: "newModel", className: "block text-sm font-medium text-gray-700 mb-1" }, "Modelo"),
+                        React.createElement('input', {
+                          type: "text",
+                          id: "newModel",
+                          value: newModel,
+                          onChange: (e) => setNewModel(e.target.value),
+                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
+                          placeholder: "Ex: XZ-2000",
+                          required: true,
+                          disabled: isLoading || editingEquipment
+                        })
+                      ),
+                      React.createElement('div', null,
+                        React.createElement('label', { htmlFor: "newBrand", className: "block text-sm font-medium text-gray-700 mb-1" }, "Marca"),
+                        React.createElement('input', {
+                          type: "text",
+                          id: "newBrand",
+                          value: newBrand,
+                          onChange: (e) => setNewBrand(e.target.value),
+                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
+                          placeholder: "Ex: Volvo",
+                          required: true,
+                          disabled: isLoading || editingEquipment
+                        })
+                      ),
+                      React.createElement('div', null,
+                        React.createElement('label', { htmlFor: "newChassis", className: "block text-sm font-medium text-gray-700 mb-1" }, "Chassi"),
+                        React.createElement('input', {
+                          type: "text",
+                          id: "newChassis",
+                          value: newChassis,
+                          onChange: (e) => setNewChassis(e.target.value),
+                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
+                          placeholder: "Ex: 9BWZZZ1234567890",
+                          required: true,
+                          disabled: isLoading || editingEquipment
+                        })
+                      ),
+                      React.createElement('div', null,
+                        React.createElement('label', { htmlFor: "newEquipmentType", className: "block text-sm font-medium text-gray-700 mb-1" }, "Tipo de Equipamento"),
+                        React.createElement('select', {
+                          id: "newEquipmentType",
+                          value: newEquipmentType,
+                          onChange: (e) => setNewEquipmentType(e.target.value),
+                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
+                          required: true,
+                          disabled: isLoading || editingEquipment
+                        },
+                          React.createElement('option', { value: "" }, "Selecione um tipo"),
+                          equipmentTypes.map((type) => (
+                            React.createElement('option', { key: type, value: type }, type)
+                          ))
+                        )
+                      ),
+                      React.createElement('div', { className: "lg:col-span-3 flex justify-center space-x-4" }, // Added space-x-4 for button spacing
+                        React.createElement('button', {
+                          type: "submit",
+                          className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
+                          disabled: isLoading || editingEquipment
+                        },
+                          isLoading ? (
+                            React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
+                              React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
+                              React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
+                            )
+                          ) : (
+                            React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
+                          ),
+                          isLoading ? 'Adicionando...' : 'Adicionar Equipamento'
+                        ),
+                        React.createElement('button', {
+                            type: "button", // Important: set type to "button" to prevent form submission
+                            onClick: () => setShowForm(false),
+                            className: "inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out transform hover:scale-105",
+                            disabled: isLoading
+                          },
+                            React.createElement(LucideIcon, { name: "Ban", className: "mr-2 h-5 w-5" }),
+                            "Cancelar"
+                          )
+                      )
+                    )
+                  ),
+
                   React.createElement('div', { className: "mb-4" },
                       React.createElement('label', { htmlFor: "searchEquipment", className: "block text-sm font-medium text-gray-700 mb-1" }, "Buscar:"),
                       React.createElement('div', { className: "relative" },
