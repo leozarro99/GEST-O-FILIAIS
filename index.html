@@ -2296,8 +2296,13 @@
                 const [transportadoEm, setTransportadoEm] = React.useState('');
                 const [transportadoDe, setTransportadoDe] = React.useState('');
                 const [valor, setValor] = React.useState('');
+                const [equipmentPlate, setEquipmentPlate] = React.useState(''); // Novo estado para a placa do equipamento
                 const [branches, setBranches] = React.useState([]);
                 const [displacements, setDisplacements] = React.useState([]);
+                const [allEquipment, setAllEquipment] = React.useState([]); // Para buscar todos os equipamentos e seus tipos
+                const [availableEquipmentPlates, setAvailableEquipmentPlates] = React.useState([]); // Placas disponíveis para seleção
+                const [selectedEquipmentTypeFilter, setSelectedEquipmentTypeFilter] = React.useState('Todos'); // Novo filtro
+                const equipmentTypesFilterOptions = ['Todos', 'BOMBA LANÇA', 'BOMBA', 'BETONEIRA']; // Opções de filtro
                 const [error, setError] = React.useState(null);
                 const [isLoading, setIsLoading] = React.useState(false);
                 const [showConfirmModal, setShowConfirmModal] = React.useState(false);
@@ -2319,6 +2324,15 @@
 
                             if (fetchBranchesError) throw fetchBranchesError;
                             setBranches(branchesData.map(b => b.name));
+
+                            // Fetch all equipment to get plates and types
+                            const { data: equipmentData, error: fetchEquipmentError } = await supabase
+                                .from('equipamentos')
+                                .select('plate, type');
+
+                            if (fetchEquipmentError) throw fetchEquipmentError;
+                            setAllEquipment(equipmentData);
+                            setAvailableEquipmentPlates(equipmentData.map(eq => eq.plate));
 
                             // Fetch displacements
                             const { data: displacementsData, error: fetchDisplacementsError } = await supabase
@@ -2344,7 +2358,7 @@
                     e.preventDefault();
                     setError(null);
 
-                    if (!transportadoEm || !transportadoDe || !valor) {
+                    if (!transportadoEm || !transportadoDe || !valor || !equipmentPlate) {
                         setError("Por favor, preencha todos os campos.");
                         showToast("Preencha todos os campos.", "error");
                         return;
@@ -2369,6 +2383,7 @@
                                     transportado_em: transportadoEm,
                                     transportado_de: transportadoDe,
                                     valor: parseFloat(valor),
+                                    equipment_plate: equipmentPlate, // Salva a placa do equipamento
                                     created_by_username: userId
                                 }
                             ]);
@@ -2379,6 +2394,7 @@
                         setTransportadoEm('');
                         setTransportadoDe('');
                         setValor('');
+                        setEquipmentPlate(''); // Limpa o campo da placa
 
                         // Re-fetch displacements
                         const { data: updatedDisplacements } = await supabase
@@ -2415,7 +2431,7 @@
                     if (!editingDisplacement) return;
 
                     setError(null);
-                    if (!editingDisplacement.transportado_em || !editingDisplacement.transportado_de || !editingDisplacement.valor) {
+                    if (!editingDisplacement.transportado_em || !editingDisplacement.transportado_de || !editingDisplacement.valor || !editingDisplacement.equipment_plate) {
                         setError("Por favor, preencha todos os campos.");
                         showToast("Preencha todos os campos.", "error");
                         return;
@@ -2438,7 +2454,8 @@
                             .update({
                                 transportado_em: editingDisplacement.transportado_em,
                                 transportado_de: editingDisplacement.transportado_de,
-                                valor: parseFloat(editingDisplacement.valor)
+                                valor: parseFloat(editingDisplacement.valor),
+                                equipment_plate: editingDisplacement.equipment_plate // Atualiza a placa do equipamento
                             })
                             .eq('id', editingDisplacement.id);
 
@@ -2512,6 +2529,15 @@
                     setCurrentPage('dashboard'); // Volta para o dashboard ou uma página padrão
                 };
 
+                // Filtrar deslocamentos com base no tipo de equipamento selecionado
+                const filteredDisplacements = displacements.filter(displacement => {
+                    if (selectedEquipmentTypeFilter === 'Todos') {
+                        return true;
+                    }
+                    const equipment = allEquipment.find(eq => eq.plate === displacement.equipment_plate);
+                    return equipment && equipment.type === selectedEquipmentTypeFilter;
+                });
+
                 return (
                     React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl mx-auto" },
                         React.createElement('div', { className: "flex items-center mb-6" },
@@ -2531,7 +2557,7 @@
                                 React.createElement('span', { className: "block sm:inline" }, " ", error)
                             )
                         ),
-                        React.createElement('form', { onSubmit: handleAddDisplacement, className: "grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50" },
+                        React.createElement('form', { onSubmit: handleAddDisplacement, className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50" },
                             React.createElement('div', { className: "relative" },
                                 React.createElement('label', { htmlFor: "transportadoEm", className: "block text-sm font-medium text-gray-700 mb-1" }, "Transportado Em:"),
                                 React.createElement('select', {
@@ -2578,6 +2604,29 @@
                                 ),
                                 React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
                             ),
+                            React.createElement('div', { className: "relative" },
+                                React.createElement('label', { htmlFor: "equipmentPlate", className: "block text-sm font-medium text-gray-700 mb-1" }, "Placa do Equipamento:"),
+                                React.createElement('select', {
+                                    id: "equipmentPlate",
+                                    value: equipmentPlate,
+                                    onChange: (e) => setEquipmentPlate(e.target.value),
+                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8 transition duration-150 ease-in-out",
+                                    required: true,
+                                    disabled: isLoading
+                                },
+                                    React.createElement('option', { value: "" }, "Selecione a placa..."),
+                                    isLoading && availableEquipmentPlates.length === 0 ? (
+                                        React.createElement('option', { disabled: true }, "Carregando placas...")
+                                    ) : availableEquipmentPlates.length === 0 ? (
+                                        React.createElement('option', { disabled: true }, "Nenhuma placa disponível.")
+                                    ) : (
+                                        availableEquipmentPlates.map(plateOption => (
+                                            React.createElement('option', { key: plateOption, value: plateOption }, plateOption)
+                                        ))
+                                    )
+                                ),
+                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
+                            ),
                             React.createElement('div', null,
                                 React.createElement('label', { htmlFor: "valor", className: "block text-sm font-medium text-gray-700 mb-1" }, "Valor:"),
                                 React.createElement('input', {
@@ -2592,7 +2641,7 @@
                                     disabled: isLoading
                                 })
                             ),
-                            React.createElement('div', { className: "md:col-span-3 flex justify-center" },
+                            React.createElement('div', { className: "md:col-span-4 flex justify-center" },
                                 React.createElement('button', {
                                     type: "submit",
                                     className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
@@ -2610,132 +2659,177 @@
                                 )
                             )
                         ),
+                        React.createElement('div', { className: "mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50" },
+                            React.createElement('label', { htmlFor: "equipmentTypeFilter", className: "block text-sm font-medium text-gray-700 mb-1" }, "Filtrar por Tipo de Equipamento:"),
+                            React.createElement('div', { className: "relative" },
+                                React.createElement('select', {
+                                    id: "equipmentTypeFilter",
+                                    value: selectedEquipmentTypeFilter,
+                                    onChange: (e) => setSelectedEquipmentTypeFilter(e.target.value),
+                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8 transition duration-150 ease-in-out",
+                                    disabled: isLoading
+                                },
+                                    equipmentTypesFilterOptions.map(type => (
+                                        React.createElement('option', { key: type, value: type }, type)
+                                    ))
+                                ),
+                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
+                            )
+                        ),
                         React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
                             React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
                                 React.createElement('thead', { className: "bg-gray-100" },
                                     React.createElement('tr', null,
                                         React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Transportado Em"),
                                         React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Transportado De"),
+                                        React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Placa do Equipamento"),
+                                        React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Tipo de Equipamento"),
                                         React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Valor"),
                                         React.createElement('th', { className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
                                     )
                                 ),
                                 React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
-                                    isLoading && displacements.length === 0 ? (
+                                    isLoading && filteredDisplacements.length === 0 ? (
                                         React.createElement('tr', null,
-                                            React.createElement('td', { colSpan: "4", className: "px-6 py-4 text-center text-sm text-gray-500" }, "Carregando deslocamentos...")
+                                            React.createElement('td', { colSpan: "6", className: "px-6 py-4 text-center text-sm text-gray-500" }, "Carregando deslocamentos...")
                                         )
-                                    ) : displacements.length === 0 ? (
+                                    ) : filteredDisplacements.length === 0 ? (
                                         React.createElement('tr', null,
-                                            React.createElement('td', { colSpan: "4", className: "px-6 py-4 text-center text-sm text-gray-500" }, "Nenhum deslocamento cadastrado.")
+                                            React.createElement('td', { colSpan: "6", className: "px-6 py-4 text-center text-sm text-gray-500" }, "Nenhum deslocamento cadastrado com o filtro selecionado.")
                                         )
                                     ) : (
-                                        displacements.map((displacement) => (
-                                            React.createElement('tr', { key: displacement.id },
-                                                React.createElement('td', { className: "px-6 py-4 text-sm font-medium text-gray-900" },
-                                                    editingDisplacement && editingDisplacement.id === displacement.id ? (
-                                                        React.createElement('div', { className: "relative" },
-                                                            React.createElement('select', {
-                                                                value: editingDisplacement.transportado_em,
-                                                                onChange: (e) => handleFieldChange(e, 'transportado_em'),
-                                                                className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
-                                                                required: true,
-                                                                disabled: isLoading
-                                                            },
-                                                                React.createElement('option', { value: "" }, "Selecione a filial..."),
-                                                                branches.map(branchName => (
-                                                                    React.createElement('option', { key: branchName, value: branchName }, branchName)
-                                                                ))
-                                                            ),
-                                                            React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
-                                                        )
-                                                    ) : (
-                                                        React.createElement('span', null, displacement.transportado_em)
-                                                    )
-                                                ),
-                                                React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" },
-                                                    editingDisplacement && editingDisplacement.id === displacement.id ? (
-                                                        React.createElement('div', { className: "relative" },
-                                                            React.createElement('select', {
-                                                                value: editingDisplacement.transportado_de,
-                                                                onChange: (e) => handleFieldChange(e, 'transportado_de'),
-                                                                className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
-                                                                required: true,
-                                                                disabled: isLoading
-                                                            },
-                                                                React.createElement('option', { value: "" }, "Selecione a filial..."),
-                                                                branches.map(branchName => (
-                                                                    React.createElement('option', { key: branchName, value: branchName }, branchName)
-                                                                ))
-                                                            ),
-                                                            React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
-                                                        )
-                                                    ) : (
-                                                        React.createElement('span', null, displacement.transportado_de)
-                                                    )
-                                                ),
-                                                React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" },
-                                                    editingDisplacement && editingDisplacement.id === displacement.id ? (
-                                                        React.createElement('input', {
-                                                            type: "number",
-                                                            value: editingDisplacement.valor,
-                                                            onChange: (e) => handleFieldChange(e, 'valor'),
-                                                            className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
-                                                            step: "0.01",
-                                                            required: true,
-                                                            disabled: isLoading
-                                                        })
-                                                    ) : (
-                                                        React.createElement('span', null, `R$ ${parseFloat(displacement.valor).toFixed(2).replace('.', ',')}`)
-                                                    )
-                                                ),
-                                                React.createElement('td', { className: "px-6 py-4 text-right whitespace-nowrap" },
-                                                    editingDisplacement && editingDisplacement.id === displacement.id ? (
-                                                        React.createElement(React.Fragment, null,
-                                                            React.createElement('button', {
-                                                                onClick: handleUpdateDisplacement,
-                                                                className: "text-green-600 hover:text-green-800 transition-colors duration-150 mr-2",
-                                                                title: "Salvar",
-                                                                disabled: isLoading
-                                                            },
-                                                                React.createElement(LucideIcon, { name: "Save", className: "h-5 w-5 inline-block align-middle" }),
-                                                                React.createElement('span', { className: "ml-1" }, "Salvar")
-                                                            ),
-                                                            React.createElement('button', {
-                                                                onClick: handleCancelEdit,
-                                                                className: "text-gray-600 hover:text-gray-800 transition-colors duration-150",
-                                                                title: "Cancelar",
-                                                                disabled: isLoading
-                                                            },
-                                                                React.createElement(LucideIcon, { name: "Ban", className: "h-5 w-5 inline-block align-middle" }),
-                                                                React.createElement('span', { className: "ml-1" }, "Cancelar")
+                                        filteredDisplacements.map((displacement) => {
+                                            const equipment = allEquipment.find(eq => eq.plate === displacement.equipment_plate);
+                                            const equipmentType = equipment ? equipment.type : 'N/A';
+                                            return (
+                                                React.createElement('tr', { key: displacement.id },
+                                                    React.createElement('td', { className: "px-6 py-4 text-sm font-medium text-gray-900" },
+                                                        editingDisplacement && editingDisplacement.id === displacement.id ? (
+                                                            React.createElement('div', { className: "relative" },
+                                                                React.createElement('select', {
+                                                                    value: editingDisplacement.transportado_em,
+                                                                    onChange: (e) => handleFieldChange(e, 'transportado_em'),
+                                                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
+                                                                    required: true,
+                                                                    disabled: isLoading
+                                                                },
+                                                                    React.createElement('option', { value: "" }, "Selecione a filial..."),
+                                                                    branches.map(branchName => (
+                                                                        React.createElement('option', { key: branchName, value: branchName }, branchName)
+                                                                    ))
+                                                                ),
+                                                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
                                                             )
+                                                        ) : (
+                                                            React.createElement('span', null, displacement.transportado_em)
                                                         )
-                                                    ) : (
-                                                        React.createElement(React.Fragment, null,
-                                                            React.createElement('button', {
-                                                                onClick: () => handleEditClick(displacement),
-                                                                className: "text-blue-600 hover:text-blue-800 transition-colors duration-150 mr-2",
-                                                                title: "Editar",
+                                                    ),
+                                                    React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" },
+                                                        editingDisplacement && editingDisplacement.id === displacement.id ? (
+                                                            React.createElement('div', { className: "relative" },
+                                                                React.createElement('select', {
+                                                                    value: editingDisplacement.transportado_de,
+                                                                    onChange: (e) => handleFieldChange(e, 'transportado_de'),
+                                                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
+                                                                    required: true,
+                                                                    disabled: isLoading
+                                                                },
+                                                                    React.createElement('option', { value: "" }, "Selecione a filial..."),
+                                                                    branches.map(branchName => (
+                                                                        React.createElement('option', { key: branchName, value: branchName }, branchName)
+                                                                    ))
+                                                                ),
+                                                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
+                                                            )
+                                                        ) : (
+                                                            React.createElement('span', null, displacement.transportado_de)
+                                                        )
+                                                    ),
+                                                    React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" },
+                                                        editingDisplacement && editingDisplacement.id === displacement.id ? (
+                                                            React.createElement('div', { className: "relative" },
+                                                                React.createElement('select', {
+                                                                    value: editingDisplacement.equipment_plate,
+                                                                    onChange: (e) => handleFieldChange(e, 'equipment_plate'),
+                                                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
+                                                                    required: true,
+                                                                    disabled: isLoading
+                                                                },
+                                                                    React.createElement('option', { value: "" }, "Selecione a placa..."),
+                                                                    availableEquipmentPlates.map(plateOption => (
+                                                                        React.createElement('option', { key: plateOption, value: plateOption }, plateOption)
+                                                                    ))
+                                                                ),
+                                                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
+                                                            )
+                                                        ) : (
+                                                            React.createElement('span', null, displacement.equipment_plate)
+                                                        )
+                                                    ),
+                                                    React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" }, equipmentType),
+                                                    React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" },
+                                                        editingDisplacement && editingDisplacement.id === displacement.id ? (
+                                                            React.createElement('input', {
+                                                                type: "number",
+                                                                value: editingDisplacement.valor,
+                                                                onChange: (e) => handleFieldChange(e, 'valor'),
+                                                                className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                                                                step: "0.01",
+                                                                required: true,
                                                                 disabled: isLoading
-                                                            },
-                                                                React.createElement(LucideIcon, { name: "Edit", className: "h-5 w-5 inline-block align-middle" }),
-                                                                React.createElement('span', { className: "ml-1" }, "Editar")
-                                                            ),
-                                                            React.createElement('button', {
-                                                                onClick: () => confirmDeleteDisplacement(displacement),
-                                                                className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
-                                                                title: "Excluir Deslocamento",
-                                                                disabled: isLoading
-                                                            },
-                                                                React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5 inline-block align-middle" }),
-                                                                React.createElement('span', { className: "ml-1" }, "Excluir")
+                                                            })
+                                                        ) : (
+                                                            React.createElement('span', null, `R$ ${parseFloat(displacement.valor).toFixed(2).replace('.', ',')}`)
+                                                        )
+                                                    ),
+                                                    React.createElement('td', { className: "px-6 py-4 text-right whitespace-nowrap" },
+                                                        editingDisplacement && editingDisplacement.id === displacement.id ? (
+                                                            React.createElement(React.Fragment, null,
+                                                                React.createElement('button', {
+                                                                    onClick: handleUpdateDisplacement,
+                                                                    className: "text-green-600 hover:text-green-800 transition-colors duration-150 mr-2",
+                                                                    title: "Salvar",
+                                                                    disabled: isLoading
+                                                                },
+                                                                    React.createElement(LucideIcon, { name: "Save", className: "h-5 w-5 inline-block align-middle" }),
+                                                                    React.createElement('span', { className: "ml-1" }, "Salvar")
+                                                                ),
+                                                                React.createElement('button', {
+                                                                    onClick: handleCancelEdit,
+                                                                    className: "text-gray-600 hover:text-gray-800 transition-colors duration-150",
+                                                                    title: "Cancelar",
+                                                                    disabled: isLoading
+                                                                },
+                                                                    React.createElement(LucideIcon, { name: "Ban", className: "h-5 w-5 inline-block align-middle" }),
+                                                                    React.createElement('span', { className: "ml-1" }, "Cancelar")
+                                                                )
+                                                            )
+                                                        ) : (
+                                                            React.createElement(React.Fragment, null,
+                                                                React.createElement('button', {
+                                                                    onClick: () => handleEditClick(displacement),
+                                                                    className: "text-blue-600 hover:text-blue-800 transition-colors duration-150 mr-2",
+                                                                    title: "Editar",
+                                                                    disabled: isLoading
+                                                                },
+                                                                    React.createElement(LucideIcon, { name: "Edit", className: "h-5 w-5 inline-block align-middle" }),
+                                                                    React.createElement('span', { className: "ml-1" }, "Editar")
+                                                                ),
+                                                                React.createElement('button', {
+                                                                    onClick: () => confirmDeleteDisplacement(displacement),
+                                                                    className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
+                                                                    title: "Excluir Deslocamento",
+                                                                    disabled: isLoading
+                                                                },
+                                                                    React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5 inline-block align-middle" }),
+                                                                    React.createElement('span', { className: "ml-1" }, "Excluir")
+                                                                )
                                                             )
                                                         )
                                                     )
                                                 )
-                                            )
-                                        ))
+                                            );
+                                        })
                                     )
                                 )
                             )
