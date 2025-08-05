@@ -903,7 +903,7 @@
                   const { data, error: fetchError } = await supabase
                     .from('equipamentos')
                     .select('*, model, brand, chassis')
-                    .order('created_at', { ascending: false });
+                    .order('created', { ascending: false });
                   if (fetchError) console.error("Erro ao re-buscar equipamentos:", fetchError);
                   else setEquipmentList(data);
 
