@@ -7,7 +7,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">\
     <!-- Lucide Icons CDN (não mais necessário se os ícones estiverem embutidos, mas mantido por segurança) -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -246,9 +246,13 @@
               return (
                 React.createElement('div', { className: "flex items-center justify-center min-h-screen bg-gray-100 font-sans" },
                   React.createElement('div', { className: "bg-white p-8 rounded-xl shadow-lg w-full max-w-md" },
-                    // TERC SISTEMAS title
+                    // Logo TERSYS
                     React.createElement('div', { className: "flex flex-col items-center justify-center mb-6" },
-                        React.createElement('h2', { className: "text-4xl font-extrabold text-blue-600 text-center" }, "TERSYS")
+                        React.createElement('img', {
+                            src: "https://gfivmnnysomfwrffybeh.supabase.co/storage/v1/object/public/logo//LOGO_TERSYS-removebg-preview%20(1).png",
+                            alt: "TERSYS Logo",
+                            className: "h-32 w-auto mb-4" // Ajuste o tamanho conforme necessário
+                        })
                     ),
                     error && (
                       React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
@@ -728,12 +732,16 @@
               const [equipmentToDelete, setEquipmentToDelete] = React.useState(null);
               const [editingEquipment, setEditingEquipment] = React.useState(null);
               const [originalEquipment, setOriginalEquipment] = React.useState(null);
-              const [searchTerm, setSearchTerm] = React.useState('');
+              const [searchTerm, setSearchTerm] = React.useState(''); // Movido para o início do componente
               const [showForm, setShowForm] = React.useState(false); // New state to control form visibility
+
+              // Adicionando console.log para depuração (agora searchTerm está declarado)
+              console.log("EquipmentManagement: Componente renderizando. Termo de busca:", searchTerm);
 
               const equipmentTypes = ["BOMBA LANÇA", "BOMBA", "BETONEIRA"];
 
               React.useEffect(() => {
+                console.log("EquipmentManagement: useEffect disparado (montagem ou showToast mudou).");
                 const fetchEquipment = async () => {
                   setIsLoading(true);
                   const { data, error: fetchError } = await supabase
@@ -752,7 +760,12 @@
                   setIsLoading(false);
                 };
                 fetchEquipment();
-              }, [showToast]);
+
+                // Adicionando função de limpeza para ver quando o componente desmonta
+                return () => {
+                    console.log("EquipmentManagement: Componente desmontando.");
+                };
+              }, [showToast]); // Dependency array includes showToast (now memoized)
 
               const handleAddEquipment = async (e) => {
                 e.preventDefault();
@@ -906,11 +919,11 @@
 
               // Filtered list based on search term (updated to include new fields in search)
               const filteredEquipmentList = equipmentList.filter(equipment =>
-                  equipment.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  equipment.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  equipment.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  equipment.chassis.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  equipment.type.toLowerCase().includes(searchTerm.toLowerCase())
+                  (equipment.plate || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (equipment.model || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (equipment.brand || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (equipment.chassis || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (equipment.type || '').toLowerCase().includes(searchTerm.toLowerCase())
               );
 
               return (
@@ -2291,564 +2304,11 @@
                 );
             }
 
-            // NOVO COMPONENTE: Gerenciamento de Deslocamento
-            function DisplacementManagement({ userId, showToast, setCurrentPage }) {
-                const [transportadoEm, setTransportadoEm] = React.useState('');
-                const [transportadoDe, setTransportadoDe] = React.useState('');
-                const [valor, setValor] = React.useState('');
-                const [equipmentPlate, setEquipmentPlate] = React.useState(''); // Novo estado para a placa do equipamento
-                const [branches, setBranches] = React.useState([]);
-                const [displacements, setDisplacements] = React.useState([]);
-                const [allEquipment, setAllEquipment] = React.useState([]); // Para buscar todos os equipamentos e seus tipos
-                const [availableEquipmentPlates, setAvailableEquipmentPlates] = React.useState([]); // Placas disponíveis para seleção
-                const [selectedEquipmentTypeFilter, setSelectedEquipmentTypeFilter] = React.useState('Todos'); // Novo filtro
-                const equipmentTypesFilterOptions = ['Todos', 'BOMBA LANÇA', 'BOMBA', 'BETONEIRA']; // Opções de filtro
-                const [error, setError] = React.useState(null);
-                const [isLoading, setIsLoading] = React.useState(false);
-                const [showConfirmModal, setShowConfirmModal] = React.useState(false);
-                const [displacementToDelete, setDisplacementToDelete] = React.useState(null);
-                const [editingDisplacement, setEditingDisplacement] = React.useState(null);
-                const [originalDisplacement, setOriginalDisplacement] = React.useState(null);
-
-                React.useEffect(() => {
-                    if (!userId) return;
-                    const fetchData = async () => {
-                        setIsLoading(true);
-                        setError(null);
-                        try {
-                            // Fetch branches
-                            const { data: branchesData, error: fetchBranchesError } = await supabase
-                                .from('filiais')
-                                .select('name')
-                                .order('name', { ascending: true });
-
-                            if (fetchBranchesError) throw fetchBranchesError;
-                            setBranches(branchesData.map(b => b.name));
-
-                            // Fetch all equipment to get plates and types
-                            const { data: equipmentData, error: fetchEquipmentError } = await supabase
-                                .from('equipamentos')
-                                .select('plate, type');
-
-                            if (fetchEquipmentError) throw fetchEquipmentError;
-                            setAllEquipment(equipmentData);
-                            setAvailableEquipmentPlates(equipmentData.map(eq => eq.plate));
-
-                            // Fetch displacements
-                            const { data: displacementsData, error: fetchDisplacementsError } = await supabase
-                                .from('deslocamentos')
-                                .select('*')
-                                .order('created_at', { ascending: false });
-
-                            if (fetchDisplacementsError) throw fetchDisplacementsError;
-                            setDisplacements(displacementsData);
-
-                        } catch (e) {
-                            console.error("Erro ao carregar dados de deslocamento:", e);
-                            setError("Erro ao carregar dados de deslocamento.");
-                            showToast("Erro ao carregar dados de deslocamento.", "error");
-                        } finally {
-                            setIsLoading(false);
-                        }
-                    };
-                    fetchData();
-                }, [userId, showToast]);
-
-                const handleAddDisplacement = async (e) => {
-                    e.preventDefault();
-                    setError(null);
-
-                    if (!transportadoEm || !transportadoDe || !valor || !equipmentPlate) {
-                        setError("Por favor, preencha todos os campos.");
-                        showToast("Preencha todos os campos.", "error");
-                        return;
-                    }
-                    if (transportadoEm === transportadoDe) {
-                        setError("A filial de origem e destino não podem ser a mesma.");
-                        showToast("Filiais de origem e destino iguais.", "error");
-                        return;
-                    }
-                    if (isNaN(parseFloat(valor)) || parseFloat(valor) <= 0) {
-                        setError("O valor deve ser um número positivo.");
-                        showToast("Valor inválido.", "error");
-                        return;
-                    }
-
-                    setIsLoading(true);
-                    try {
-                        const { error: insertError } = await supabase
-                            .from('deslocamentos')
-                            .insert([
-                                {
-                                    transportado_em: transportadoEm,
-                                    transportado_de: transportadoDe,
-                                    valor: parseFloat(valor),
-                                    equipment_plate: equipmentPlate, // Salva a placa do equipamento
-                                    created_by_username: userId
-                                }
-                            ]);
-
-                        if (insertError) throw insertError;
-
-                        showToast("Deslocamento registrado com sucesso!", "success");
-                        setTransportadoEm('');
-                        setTransportadoDe('');
-                        setValor('');
-                        setEquipmentPlate(''); // Limpa o campo da placa
-
-                        // Re-fetch displacements
-                        const { data: updatedDisplacements } = await supabase
-                            .from('deslocamentos')
-                            .select('*')
-                            .order('created_at', { ascending: false });
-                        setDisplacements(updatedDisplacements);
-
-                    } catch (e) {
-                        console.error("Erro ao registrar deslocamento:", e);
-                        setError("Erro ao registrar deslocamento. Tente novamente.");
-                        showToast("Erro ao registrar deslocamento.", "error");
-                    } finally {
-                        setIsLoading(false);
-                    }
-                };
-
-                const handleEditClick = (displacement) => {
-                    setEditingDisplacement({ ...displacement });
-                    setOriginalDisplacement({ ...displacement });
-                };
-
-                const handleCancelEdit = () => {
-                    setEditingDisplacement(null);
-                    setOriginalDisplacement(null);
-                    setDisplacements(prevDisplacements =>
-                        prevDisplacements.map(d =>
-                            d.id === originalDisplacement.id ? originalDisplacement : d
-                        )
-                    );
-                };
-
-                const handleUpdateDisplacement = async () => {
-                    if (!editingDisplacement) return;
-
-                    setError(null);
-                    if (!editingDisplacement.transportado_em || !editingDisplacement.transportado_de || !editingDisplacement.valor || !editingDisplacement.equipment_plate) {
-                        setError("Por favor, preencha todos os campos.");
-                        showToast("Preencha todos os campos.", "error");
-                        return;
-                    }
-                    if (editingDisplacement.transportado_em === editingDisplacement.transportado_de) {
-                        setError("A filial de origem e destino não podem ser a mesma.");
-                        showToast("Filiais de origem e destino iguais.", "error");
-                        return;
-                    }
-                    if (isNaN(parseFloat(editingDisplacement.valor)) || parseFloat(editingDisplacement.valor) <= 0) {
-                        setError("O valor deve ser um número positivo.");
-                        showToast("Valor inválido.", "error");
-                        return;
-                    }
-
-                    setIsLoading(true);
-                    try {
-                        const { error: updateError } = await supabase
-                            .from('deslocamentos')
-                            .update({
-                                transportado_em: editingDisplacement.transportado_em,
-                                transportado_de: editingDisplacement.transportado_de,
-                                valor: parseFloat(editingDisplacement.valor),
-                                equipment_plate: editingDisplacement.equipment_plate // Atualiza a placa do equipamento
-                            })
-                            .eq('id', editingDisplacement.id);
-
-                        if (updateError) throw updateError;
-
-                        showToast("Deslocamento atualizado com sucesso!", "success");
-                        setEditingDisplacement(null);
-                        setOriginalDisplacement(null);
-
-                        // Re-fetch displacements
-                        const { data: updatedDisplacements } = await supabase
-                            .from('deslocamentos')
-                            .select('*')
-                            .order('created_at', { ascending: false });
-                        setDisplacements(updatedDisplacements);
-
-                    } catch (e) {
-                        console.error("Erro ao atualizar deslocamento:", e);
-                        setError("Erro ao atualizar deslocamento.");
-                        showToast("Erro ao atualizar deslocamento.", "error");
-                    } finally {
-                        setIsLoading(false);
-                    }
-                };
-
-                const handleFieldChange = (e, fieldName) => {
-                    setEditingDisplacement(prev => ({
-                        ...prev,
-                        [fieldName]: e.target.value
-                    }));
-                };
-
-                const confirmDeleteDisplacement = (displacement) => {
-                    setDisplacementToDelete(displacement);
-                    setShowConfirmModal(true);
-                };
-
-                const handleDeleteDisplacement = async () => {
-                    if (!displacementToDelete) return;
-
-                    setIsLoading(true);
-                    setShowConfirmModal(false);
-                    try {
-                        const { error: deleteError } = await supabase
-                            .from('deslocamentos')
-                            .delete()
-                            .eq('id', displacementToDelete.id);
-
-                        if (deleteError) throw deleteError;
-
-                        showToast("Deslocamento excluído com sucesso!", "success");
-
-                        // Re-fetch displacements
-                        const { data: updatedDisplacements } = await supabase
-                            .from('deslocamentos')
-                            .select('*')
-                            .order('created_at', { ascending: false });
-                        setDisplacements(updatedDisplacements);
-
-                    } catch (e) {
-                        console.error("Erro ao excluir deslocamento:", e);
-                        setError("Erro ao excluir deslocamento.");
-                        showToast("Erro ao excluir deslocamento.", "error");
-                    } finally {
-                        setIsLoading(false);
-                        setDisplacementToDelete(null);
-                    }
-                };
-
-                const handleGoBack = () => {
-                    setCurrentPage('dashboard'); // Volta para o dashboard ou uma página padrão
-                };
-
-                // Filtrar deslocamentos com base no tipo de equipamento selecionado
-                const filteredDisplacements = displacements.filter(displacement => {
-                    if (selectedEquipmentTypeFilter === 'Todos') {
-                        return true;
-                    }
-                    const equipment = allEquipment.find(eq => eq.plate === displacement.equipment_plate);
-                    return equipment && equipment.type === selectedEquipmentTypeFilter;
-                });
-
-                return (
-                    React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl mx-auto" },
-                        React.createElement('div', { className: "flex items-center mb-6" },
-                            React.createElement('button', {
-                                onClick: handleGoBack,
-                                className: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out transform hover:scale-105",
-                                disabled: isLoading
-                            },
-                                React.createElement(LucideIcon, { name: "ArrowLeft", className: "mr-2 h-5 w-5" }),
-                                "Voltar"
-                            ),
-                            React.createElement('h2', { className: "text-2xl font-bold text-gray-800 flex-grow text-center" }, "Gerenciamento de Deslocamento")
-                        ),
-                        error && (
-                            React.createElement('div', { className: "bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4", role: "alert" },
-                                React.createElement('strong', { className: "font-bold" }, "Erro:"),
-                                React.createElement('span', { className: "block sm:inline" }, " ", error)
-                            )
-                        ),
-                        React.createElement('form', { onSubmit: handleAddDisplacement, className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50" },
-                            React.createElement('div', { className: "relative" },
-                                React.createElement('label', { htmlFor: "transportadoEm", className: "block text-sm font-medium text-gray-700 mb-1" }, "Transportado Em:"),
-                                React.createElement('select', {
-                                    id: "transportadoEm",
-                                    value: transportadoEm,
-                                    onChange: (e) => setTransportadoEm(e.target.value),
-                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8 transition duration-150 ease-in-out",
-                                    required: true,
-                                    disabled: isLoading
-                                },
-                                    React.createElement('option', { value: "" }, "Selecione a filial de destino..."),
-                                    isLoading && branches.length === 0 ? (
-                                        React.createElement('option', { disabled: true }, "Carregando filiais...")
-                                    ) : branches.length === 0 ? (
-                                        React.createElement('option', { disabled: true }, "Nenhuma filial disponível.")
-                                    ) : (
-                                        branches.map(branchName => (
-                                            React.createElement('option', { key: branchName, value: branchName }, branchName)
-                                        ))
-                                    )
-                                ),
-                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
-                            ),
-                            React.createElement('div', { className: "relative" },
-                                React.createElement('label', { htmlFor: "transportadoDe", className: "block text-sm font-medium text-gray-700 mb-1" }, "Transportado De:"),
-                                React.createElement('select', {
-                                    id: "transportadoDe",
-                                    value: transportadoDe,
-                                    onChange: (e) => setTransportadoDe(e.target.value),
-                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8 transition duration-150 ease-in-out",
-                                    required: true,
-                                    disabled: isLoading
-                                },
-                                    React.createElement('option', { value: "" }, "Selecione a filial de origem..."),
-                                    isLoading && branches.length === 0 ? (
-                                        React.createElement('option', { disabled: true }, "Carregando filiais...")
-                                    ) : branches.length === 0 ? (
-                                        React.createElement('option', { disabled: true }, "Nenhuma filial disponível.")
-                                    ) : (
-                                        branches.map(branchName => (
-                                            React.createElement('option', { key: branchName, value: branchName }, branchName)
-                                        ))
-                                    )
-                                ),
-                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
-                            ),
-                            React.createElement('div', { className: "relative" },
-                                React.createElement('label', { htmlFor: "equipmentPlate", className: "block text-sm font-medium text-gray-700 mb-1" }, "Placa do Equipamento:"),
-                                React.createElement('select', {
-                                    id: "equipmentPlate",
-                                    value: equipmentPlate,
-                                    onChange: (e) => setEquipmentPlate(e.target.value),
-                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8 transition duration-150 ease-in-out",
-                                    required: true,
-                                    disabled: isLoading
-                                },
-                                    React.createElement('option', { value: "" }, "Selecione a placa..."),
-                                    isLoading && availableEquipmentPlates.length === 0 ? (
-                                        React.createElement('option', { disabled: true }, "Carregando placas...")
-                                    ) : availableEquipmentPlates.length === 0 ? (
-                                        React.createElement('option', { disabled: true }, "Nenhuma placa disponível.")
-                                    ) : (
-                                        availableEquipmentPlates.map(plateOption => (
-                                            React.createElement('option', { key: plateOption, value: plateOption }, plateOption)
-                                        ))
-                                    )
-                                ),
-                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
-                            ),
-                            React.createElement('div', null,
-                                React.createElement('label', { htmlFor: "valor", className: "block text-sm font-medium text-gray-700 mb-1" }, "Valor:"),
-                                React.createElement('input', {
-                                    type: "number",
-                                    id: "valor",
-                                    value: valor,
-                                    onChange: (e) => setValor(e.target.value),
-                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out",
-                                    placeholder: "Ex: 150.00",
-                                    step: "0.01",
-                                    required: true,
-                                    disabled: isLoading
-                                })
-                            ),
-                            React.createElement('div', { className: "md:col-span-4 flex justify-center" },
-                                React.createElement('button', {
-                                    type: "submit",
-                                    className: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105",
-                                    disabled: isLoading
-                                },
-                                    isLoading ? (
-                                        React.createElement('svg', { className: "animate-spin -ml-1 mr-3 h-5 w-5 text-white", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24" },
-                                            React.createElement('circle', { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }),
-                                            React.createElement('path', { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })
-                                        )
-                                    ) : (
-                                        React.createElement(LucideIcon, { name: "PlusCircle", className: "mr-2 h-5 w-5" })
-                                    ),
-                                    isLoading ? 'Registrando...' : 'Registrar Deslocamento'
-                                )
-                            )
-                        ),
-                        React.createElement('div', { className: "mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50" },
-                            React.createElement('label', { htmlFor: "equipmentTypeFilter", className: "block text-sm font-medium text-gray-700 mb-1" }, "Filtrar por Tipo de Equipamento:"),
-                            React.createElement('div', { className: "relative" },
-                                React.createElement('select', {
-                                    id: "equipmentTypeFilter",
-                                    value: selectedEquipmentTypeFilter,
-                                    onChange: (e) => setSelectedEquipmentTypeFilter(e.target.value),
-                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8 transition duration-150 ease-in-out",
-                                    disabled: isLoading
-                                },
-                                    equipmentTypesFilterOptions.map(type => (
-                                        React.createElement('option', { key: type, value: type }, type)
-                                    ))
-                                ),
-                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
-                            )
-                        ),
-                        React.createElement('div', { className: "overflow-x-auto rounded-lg shadow-md border border-gray-200" },
-                            React.createElement('table', { className: "min-w-full divide-y divide-gray-200" },
-                                React.createElement('thead', { className: "bg-gray-100" },
-                                    React.createElement('tr', null,
-                                        React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Transportado Em"),
-                                        React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Transportado De"),
-                                        React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Placa do Equipamento"),
-                                        React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Tipo de Equipamento"),
-                                        React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Valor"),
-                                        React.createElement('th', { className: "px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Ações")
-                                    )
-                                ),
-                                React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
-                                    isLoading && filteredDisplacements.length === 0 ? (
-                                        React.createElement('tr', null,
-                                            React.createElement('td', { colSpan: "6", className: "px-6 py-4 text-center text-sm text-gray-500" }, "Carregando deslocamentos...")
-                                        )
-                                    ) : filteredDisplacements.length === 0 ? (
-                                        React.createElement('tr', null,
-                                            React.createElement('td', { colSpan: "6", className: "px-6 py-4 text-center text-sm text-gray-500" }, "Nenhum deslocamento cadastrado com o filtro selecionado.")
-                                        )
-                                    ) : (
-                                        filteredDisplacements.map((displacement) => {
-                                            const equipment = allEquipment.find(eq => eq.plate === displacement.equipment_plate);
-                                            const equipmentType = equipment ? equipment.type : 'N/A';
-                                            return (
-                                                React.createElement('tr', { key: displacement.id },
-                                                    React.createElement('td', { className: "px-6 py-4 text-sm font-medium text-gray-900" },
-                                                        editingDisplacement && editingDisplacement.id === displacement.id ? (
-                                                            React.createElement('div', { className: "relative" },
-                                                                React.createElement('select', {
-                                                                    value: editingDisplacement.transportado_em,
-                                                                    onChange: (e) => handleFieldChange(e, 'transportado_em'),
-                                                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
-                                                                    required: true,
-                                                                    disabled: isLoading
-                                                                },
-                                                                    React.createElement('option', { value: "" }, "Selecione a filial..."),
-                                                                    branches.map(branchName => (
-                                                                        React.createElement('option', { key: branchName, value: branchName }, branchName)
-                                                                    ))
-                                                                ),
-                                                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
-                                                            )
-                                                        ) : (
-                                                            React.createElement('span', null, displacement.transportado_em)
-                                                        )
-                                                    ),
-                                                    React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" },
-                                                        editingDisplacement && editingDisplacement.id === displacement.id ? (
-                                                            React.createElement('div', { className: "relative" },
-                                                                React.createElement('select', {
-                                                                    value: editingDisplacement.transportado_de,
-                                                                    onChange: (e) => handleFieldChange(e, 'transportado_de'),
-                                                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
-                                                                    required: true,
-                                                                    disabled: isLoading
-                                                                },
-                                                                    React.createElement('option', { value: "" }, "Selecione a filial..."),
-                                                                    branches.map(branchName => (
-                                                                        React.createElement('option', { key: branchName, value: branchName }, branchName)
-                                                                    ))
-                                                                ),
-                                                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
-                                                            )
-                                                        ) : (
-                                                            React.createElement('span', null, displacement.transportado_de)
-                                                        )
-                                                    ),
-                                                    React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" },
-                                                        editingDisplacement && editingDisplacement.id === displacement.id ? (
-                                                            React.createElement('div', { className: "relative" },
-                                                                React.createElement('select', {
-                                                                    value: editingDisplacement.equipment_plate,
-                                                                    onChange: (e) => handleFieldChange(e, 'equipment_plate'),
-                                                                    className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8",
-                                                                    required: true,
-                                                                    disabled: isLoading
-                                                                },
-                                                                    React.createElement('option', { value: "" }, "Selecione a placa..."),
-                                                                    availableEquipmentPlates.map(plateOption => (
-                                                                        React.createElement('option', { key: plateOption, value: plateOption }, plateOption)
-                                                                    ))
-                                                                ),
-                                                                React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
-                                                            )
-                                                        ) : (
-                                                            React.createElement('span', null, displacement.equipment_plate)
-                                                        )
-                                                    ),
-                                                    React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" }, equipmentType),
-                                                    React.createElement('td', { className: "px-6 py-4 text-sm text-gray-700" },
-                                                        editingDisplacement && editingDisplacement.id === displacement.id ? (
-                                                            React.createElement('input', {
-                                                                type: "number",
-                                                                value: editingDisplacement.valor,
-                                                                onChange: (e) => handleFieldChange(e, 'valor'),
-                                                                className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
-                                                                step: "0.01",
-                                                                required: true,
-                                                                disabled: isLoading
-                                                            })
-                                                        ) : (
-                                                            React.createElement('span', null, `R$ ${parseFloat(displacement.valor).toFixed(2).replace('.', ',')}`)
-                                                        )
-                                                    ),
-                                                    React.createElement('td', { className: "px-6 py-4 text-right whitespace-nowrap" },
-                                                        editingDisplacement && editingDisplacement.id === displacement.id ? (
-                                                            React.createElement(React.Fragment, null,
-                                                                React.createElement('button', {
-                                                                    onClick: handleUpdateDisplacement,
-                                                                    className: "text-green-600 hover:text-green-800 transition-colors duration-150 mr-2",
-                                                                    title: "Salvar",
-                                                                    disabled: isLoading
-                                                                },
-                                                                    React.createElement(LucideIcon, { name: "Save", className: "h-5 w-5 inline-block align-middle" }),
-                                                                    React.createElement('span', { className: "ml-1" }, "Salvar")
-                                                                ),
-                                                                React.createElement('button', {
-                                                                    onClick: handleCancelEdit,
-                                                                    className: "text-gray-600 hover:text-gray-800 transition-colors duration-150",
-                                                                    title: "Cancelar",
-                                                                    disabled: isLoading
-                                                                },
-                                                                    React.createElement(LucideIcon, { name: "Ban", className: "h-5 w-5 inline-block align-middle" }),
-                                                                    React.createElement('span', { className: "ml-1" }, "Cancelar")
-                                                                )
-                                                            )
-                                                        ) : (
-                                                            React.createElement(React.Fragment, null,
-                                                                React.createElement('button', {
-                                                                    onClick: () => handleEditClick(displacement),
-                                                                    className: "text-blue-600 hover:text-blue-800 transition-colors duration-150 mr-2",
-                                                                    title: "Editar",
-                                                                    disabled: isLoading
-                                                                },
-                                                                    React.createElement(LucideIcon, { name: "Edit", className: "h-5 w-5 inline-block align-middle" }),
-                                                                    React.createElement('span', { className: "ml-1" }, "Editar")
-                                                                ),
-                                                                React.createElement('button', {
-                                                                    onClick: () => confirmDeleteDisplacement(displacement),
-                                                                    className: "text-red-600 hover:text-red-800 ml-4 transition-colors duration-150",
-                                                                    title: "Excluir Deslocamento",
-                                                                    disabled: isLoading
-                                                                },
-                                                                    React.createElement(LucideIcon, { name: "Trash2", className: "h-5 w-5 inline-block align-middle" }),
-                                                                    React.createElement('span', { className: "ml-1" }, "Excluir")
-                                                                )
-                                                            )
-                                                        )
-                                                    )
-                                                )
-                                            );
-                                        })
-                                    )
-                                )
-                            )
-                        ),
-                        showConfirmModal && React.createElement(ConfirmationModal, {
-                            message: `Deseja excluir o registro de deslocamento de R$ ${parseFloat(displacementToDelete?.valor).toFixed(2).replace('.', ',')}?`,
-                            onConfirm: handleDeleteDisplacement,
-                            onCancel: () => setShowConfirmModal(false)
-                        })
-                    )
-                );
-            }
-
-
             // Componente para a tela vazia inicial (agora com visual e a descrição)
             function EmptyPanel() {
               return (
                 React.createElement('div', { className: "flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] bg-white p-6 rounded-xl shadow-lg text-center" },
-                  React.createElement('h2', { className: "text-4xl font-extrabold text-blue-600 text-center mb-4" }, "SISTEMA DE GERENCIAMENTO"),
+                  // Removido o h2 "SISTEMA DE GERENCIAMENTO"
                   React.createElement('p', { className: "text-lg text-gray-700 mt-4 max-w-2xl leading-relaxed" }, "O SISTEMA DE GERENCIAMENTO é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações.")
                 )
               );
@@ -2870,15 +2330,16 @@
               const [toastMessage, setToastMessage] = React.useState(null);
               const [toastType, setToastType] = React.useState(null);
 
-              const showToast = (message, type) => {
+              // Memoizando as funções showToast e clearToast
+              const showToast = React.useCallback((message, type) => {
                   setToastMessage(message);
                   setToastType(type);
-              };
+              }, []); // Empty dependency array means it's created once and never changes
 
-              const clearToast = () => {
+              const clearToast = React.useCallback(() => {
                   setToastMessage(null);
                   setToastType(null);
-              };
+              }, []); // Empty dependency array means it's created once and never changes
 
               // useEffect para verificar o localStorage na montagem do componente
               React.useEffect(() => {
@@ -3021,15 +2482,6 @@
                                   React.createElement(LucideIcon, { name: "ArrowLeftRight", className: "mr-3 h-5 w-5" }),
                                   "Troca de Filial"
                                 )
-                              ),
-                              React.createElement('li', null,
-                                React.createElement('button', {
-                                  onClick: () => { setCurrentPage('displacementManagement'); closeSidebar(); }, // Novo item de menu
-                                  className: `flex items-center w-full px-4 py-2 rounded-lg transition duration-150 ease-in-out ${currentPage === 'displacementManagement' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-gray-700 text-gray-300'}`
-                                },
-                                  React.createElement(LucideIcon, { name: "ArrowLeftRight", className: "mr-3 h-5 w-5" }), // Reutilizando o ícone
-                                  "Deslocamento"
-                                )
                               )
                             )
                           )
@@ -3104,7 +2556,12 @@
                       React.createElement('button', { className: "text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors", onClick: toggleSidebar },
                         React.createElement(LucideIcon, { name: "Menu", className: "h-6 w-6" })
                       ),
-                      React.createElement('h1', { className: "text-4xl font-extrabold text-blue-600 text-center flex-grow" }, "TERSYS")
+                      // Removido o h1 "TERSYS" e adicionada a logo
+                      React.createElement('img', {
+                          src: "https://gfivmnnysomfwrffybeh.supabase.co/storage/v1/object/public/logo//LOGO_TERSYS-removebg-preview%20(1).png",
+                          alt: "TERSYS Logo",
+                          className: "h-12 w-auto" // Ajuste o tamanho conforme necessário
+                      })
                     ),
 
                     error && (
@@ -3121,8 +2578,7 @@
                       currentPage === 'equipmentManagement' && userRole === 'administrador' && React.createElement(EquipmentManagement, { userId: userId, showToast: showToast }),
                       currentPage === 'userManagement' && userRole === 'administrador' && React.createElement(UserManagement, { userId: userId, showToast: showToast }),
                       currentPage === 'outsourcingDistribution' && React.createElement(OutsourcingDistribution, { userId: userId, showToast: showToast, setCurrentPage: setCurrentPage }),
-                      currentPage === 'branchTransfer' && React.createElement(BranchTransfer, { userId: userId, setCurrentPage: setCurrentPage, showToast: showToast }),
-                      currentPage === 'displacementManagement' && React.createElement(DisplacementManagement, { userId: userId, setCurrentPage: setCurrentPage, showToast: showToast }), // Renderiza o novo componente
+                      currentPage === 'branchTransfer' && React.createElement(BranchTransfer, { userId: userId, setCurrentPage: setCurrentPage, showToast: showToast }), // Adicionada vírgula aqui
                       toastMessage && React.createElement(Toast, { message: toastMessage, type: toastType, onClose: clearToast })
                     )
                   )
