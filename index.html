@@ -1466,6 +1466,7 @@
               const [plate, setNewPlate] = React.useState('');
               const [newBranch, setNewBranch] = React.useState('');
               const [executionDate, setExecutionDate] = React.useState(''); // Data de Alteração
+              const [isTransferActive, setIsTransferActive] = React.useState(true); // Novo estado para o toggle
               const [branches, setBranches] = React.useState([]);
               const [availablePlates, setAvailablePlates] = React.useState([]);
               const [error, setError] = React.useState(null);
@@ -1555,7 +1556,13 @@
                   const { error: insertError } = await supabase
                     .from('trocasFilial')
                     .insert([
-                      { plate: plate.trim(), newBranch: newBranch, executionDate: executionDate, ending_date: null, created_by_username: userId }
+                      {
+                        plate: plate.trim(),
+                        newBranch: newBranch,
+                        executionDate: executionDate,
+                        ending_date: isTransferActive ? null : executionDate, // Define ending_date com base no toggle
+                        created_by_username: userId
+                      }
                     ]);
 
                   if (insertError) throw insertError;
@@ -1564,6 +1571,7 @@
                   setNewPlate('');
                   setNewBranch('');
                   setExecutionDate('');
+                  setIsTransferActive(true); // Reset toggle for next entry
                 } catch (e) {
                   console.error("Erro ao registrar troca de filial:", e);
                   setError("Erro ao registrar troca de filial. Tente novamente.");
@@ -1659,6 +1667,21 @@
                         }),
                         React.createElement(LucideIcon, { name: "CalendarDays", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
                       )
+                    ),
+                    React.createElement('div', { className: "flex items-center mt-4" },
+                        React.createElement('label', { htmlFor: "isActiveToggle", className: "block text-sm font-medium text-gray-700 mr-3" }, "Status:"),
+                        React.createElement('label', { className: "relative inline-flex items-center cursor-pointer" },
+                            React.createElement('input', {
+                                type: "checkbox",
+                                id: "isActiveToggle",
+                                className: "sr-only peer",
+                                checked: isTransferActive,
+                                onChange: () => setIsTransferActive(!isTransferActive),
+                                disabled: isLoading
+                            }),
+                            React.createElement('div', { className: "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" }),
+                            React.createElement('span', { className: "ml-3 text-sm font-medium text-gray-900 dark:text-gray-300" }, isTransferActive ? 'ATIVO' : 'INATIVO')
+                        )
                     ),
                     React.createElement('button', {
                       type: "submit",
@@ -1857,11 +1880,10 @@
                   setError(null); // Limpar erros anteriores
 
                   try {
-                    // Buscar todos os registros de transferência de filial ativos
+                    // Buscar todos os registros de transferência de filial
                     let queryBuilder = supabase
                       .from('trocasFilial')
-                      .select('*') // Seleciona todas as colunas para exportação
-                      .is('ending_date', null); // Filtrar apenas registros ativos para o dashboard
+                      .select('*'); // Seleciona todas as colunas para exportação
                 
                     // Usar allBranches que já foi carregado no useEffect anterior
                     // Criar um mapa de filial para responsável
@@ -1893,7 +1915,7 @@
                       );
                     }
 
-                    // Mapear tipo de equipamento para cada registro (incluindo novos campos)
+                    // Mapear tipo de equipamento e status para cada registro (incluindo novos campos)
                     const finalFilteredData = filteredTrocasFilial.map(registro => {
                         const equipment = allEquipment.find(eq => eq.plate === registro.plate);
                         return {
@@ -1901,7 +1923,8 @@
                             tipoEquipamento: equipment ? equipment.type : 'N/A',
                             modeloEquipamento: equipment ? equipment.model : 'N/A', // Adicionado
                             marcaEquipamento: equipment ? equipment.brand : 'N/A',   // Adicionado
-                            chassiEquipamento: equipment ? equipment.chassis : 'N/A' // Adicionado
+                            chassiEquipamento: equipment ? equipment.chassis : 'N/A', // Adicionado
+                            status: registro.ending_date === null ? 'ATIVO' : 'INATIVO' // Adicionado o status
                         };
                     }).filter(registro => {
                         // Aplicar filtro de tipo de equipamento após o mapeamento
@@ -1943,7 +1966,7 @@
 
               const exportToCSV = () => {
                 // Cabeçalhos e linhas modificados para exportação CSV
-                const headers = ["Filial", "Placa", "Modelo", "Marca", "Chassi", "Tipo de Equipamento", "Data de Início", "Data Final"]; // Adicionado Modelo, Marca, Chassi
+                const headers = ["Filial", "Placa", "Modelo", "Marca", "Chassi", "Tipo de Equipamento", "Data de Início", "Data Final", "Status"]; // Adicionado Modelo, Marca, Chassi, Status
                 const rows = registros.map(registro => [
                   registro.newBranch,
                   registro.plate,
@@ -1952,7 +1975,8 @@
                   registro.chassiEquipamento, // Incluir chassi
                   registro.tipoEquipamento,
                   formatDate(registro.executionDate), // Formatar data para CSV
-                  registro.ending_date ? formatDate(registro.ending_date) : '' // Formatar data para CSV (se existir)
+                  registro.ending_date ? formatDate(registro.ending_date) : '', // Formatar data para CSV (se existir)
+                  registro.status // Incluir status
                 ]);
 
                 let csvContent = headers.map(header => `"${header}"`).join(";") + "\n";
@@ -2147,17 +2171,18 @@
                           React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Marca"),
                           React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Chassi"),
                           React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Tipo de Equipamento"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Data de Alteração")
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Data de Alteração"),
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Status")
                         )
                       ),
                       React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
                         isLoading && filteredRegistrosForDisplay.length === 0 ? (
                             React.createElement('tr', null,
-                                React.createElement('td', { colSpan: "7", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando registros...")
+                                React.createElement('td', { colSpan: "8", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Carregando registros...")
                             )
                         ) : filteredRegistrosForDisplay.length === 0 ? (
                           React.createElement('tr', null,
-                            React.createElement('td', { colSpan: "7", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum registro encontrado.")
+                            React.createElement('td', { colSpan: "8", className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center" }, "Nenhum registro encontrado.")
                           )
                         ) : (
                           filteredRegistrosForDisplay.map((registro) => (
@@ -2168,7 +2193,8 @@
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.marcaEquipamento),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.chassiEquipamento),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.tipoEquipamento),
-                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, formatDate(registro.executionDate))
+                              React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, formatDate(registro.executionDate)),
+                              React.createElement('td', { className: `px-6 py-4 whitespace-nowrap text-sm font-semibold ${registro.status === 'ATIVO' ? 'text-green-600' : 'text-red-600'}` }, registro.status)
                             )
                           ))
                         )
