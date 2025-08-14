@@ -7,7 +7,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">\
     <!-- Lucide Icons CDN (não mais necessário se os ícones estiverem embutidos, mas mantido por segurança) -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -732,16 +732,12 @@
               const [equipmentToDelete, setEquipmentToDelete] = React.useState(null);
               const [editingEquipment, setEditingEquipment] = React.useState(null);
               const [originalEquipment, setOriginalEquipment] = React.useState(null);
-              const [searchTerm, setSearchTerm] = React.useState(''); // Movido para o início do componente
+              const [searchTerm, setSearchTerm] = React.useState('');
               const [showForm, setShowForm] = React.useState(false); // New state to control form visibility
-
-              // Adicionando console.log para depuração (agora searchTerm está declarado)
-              console.log("EquipmentManagement: Componente renderizando. Termo de busca:", searchTerm);
 
               const equipmentTypes = ["BOMBA LANÇA", "BOMBA", "BETONEIRA"];
 
               React.useEffect(() => {
-                console.log("EquipmentManagement: useEffect disparado (montagem ou showToast mudou).");
                 const fetchEquipment = async () => {
                   setIsLoading(true);
                   const { data, error: fetchError } = await supabase
@@ -760,12 +756,7 @@
                   setIsLoading(false);
                 };
                 fetchEquipment();
-
-                // Adicionando função de limpeza para ver quando o componente desmonta
-                return () => {
-                    console.log("EquipmentManagement: Componente desmontando.");
-                };
-              }, [showToast]); // Dependency array includes showToast (now memoized)
+              }, [showToast]);
 
               const handleAddEquipment = async (e) => {
                 e.preventDefault();
@@ -919,11 +910,11 @@
 
               // Filtered list based on search term (updated to include new fields in search)
               const filteredEquipmentList = equipmentList.filter(equipment =>
-                  (equipment.plate || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  (equipment.model || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  (equipment.brand || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  (equipment.chassis || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  (equipment.type || '').toLowerCase().includes(searchTerm.toLowerCase())
+                  equipment.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  equipment.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  equipment.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  equipment.chassis.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  equipment.type.toLowerCase().includes(searchTerm.toLowerCase())
               );
 
               return (
@@ -1466,12 +1457,11 @@
               const [plate, setNewPlate] = React.useState('');
               const [newBranch, setNewBranch] = React.useState('');
               const [executionDate, setExecutionDate] = React.useState(''); // Data de Alteração
-              const [isTransferActive, setIsTransferActive] = React.useState(true); // Novo estado para o toggle
               const [branches, setBranches] = React.useState([]);
               const [availablePlates, setAvailablePlates] = React.useState([]);
               const [error, setError] = React.useState(null);
               const [isLoading, setIsLoading] = React.useState(false);
-
+              const [status, setStatus] = React.useState('ATIVO'); // New state for status
 
               React.useEffect(() => {
                 if (!userId) return;
@@ -1532,7 +1522,7 @@
                     throw fetchExistingError;
                   }
 
-                  // 2. If an active record is found, update its ending_date
+                  // 2. If an active record is found, update its ending_date and status to 'INATIVO'
                   if (existingRecords && existingRecords.length > 0) {
                     const existingRecord = existingRecords[0];
 
@@ -1543,26 +1533,20 @@
 
                     const { error: updateError } = await supabase
                       .from('trocasFilial')
-                      .update({ ending_date: previousDayDate })
+                      .update({ ending_date: previousDayDate, status: 'INATIVO' }) // Update status to INATIVO
                       .eq('id', existingRecord.id); // Update the specific existing record
 
                     if (updateError) {
                       throw updateError;
                     }
-                    showToast(`Registro anterior da placa ${plate.trim()} atualizado.`, "success");
+                    showToast(`Registro anterior da placa ${plate.trim()} atualizado para INATIVO.`, "success");
                   }
 
-                  // 3. Insert the new record
+                  // 3. Insert the new record with the selected status
                   const { error: insertError } = await supabase
                     .from('trocasFilial')
                     .insert([
-                      {
-                        plate: plate.trim(),
-                        newBranch: newBranch,
-                        executionDate: executionDate,
-                        ending_date: isTransferActive ? null : executionDate, // Define ending_date com base no toggle
-                        created_by_username: userId
-                      }
+                      { plate: plate.trim(), newBranch: newBranch, executionDate: executionDate, ending_date: null, created_by_username: userId, status: status }
                     ]);
 
                   if (insertError) throw insertError;
@@ -1571,7 +1555,7 @@
                   setNewPlate('');
                   setNewBranch('');
                   setExecutionDate('');
-                  setIsTransferActive(true); // Reset toggle for next entry
+                  setStatus('ATIVO'); // Reset status for next entry
                 } catch (e) {
                   console.error("Erro ao registrar troca de filial:", e);
                   setError("Erro ao registrar troca de filial. Tente novamente.");
@@ -1582,7 +1566,7 @@
               };
 
               const handleGoBack = () => {
-                setCurrentPage('dashboard');
+                setCurrentPage('quickAccessMenu'); // Redirect to QuickAccessMenu
               };
 
               return (
@@ -1668,20 +1652,22 @@
                         React.createElement(LucideIcon, { name: "CalendarDays", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
                       )
                     ),
-                    React.createElement('div', { className: "flex items-center mt-4" },
-                        React.createElement('label', { htmlFor: "isActiveToggle", className: "block text-sm font-medium text-gray-700 mr-3" }, "Status:"),
-                        React.createElement('label', { className: "relative inline-flex items-center cursor-pointer" },
-                            React.createElement('input', {
-                                type: "checkbox",
-                                id: "isActiveToggle",
-                                className: "sr-only peer",
-                                checked: isTransferActive,
-                                onChange: () => setIsTransferActive(!isTransferActive),
-                                disabled: isLoading
-                            }),
-                            React.createElement('div', { className: "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" }),
-                            React.createElement('span', { className: "ml-3 text-sm font-medium text-gray-900 dark:text-gray-300" }, isTransferActive ? 'ATIVO' : 'INATIVO')
-                        )
+                    React.createElement('div', null,
+                      React.createElement('label', { htmlFor: "status", className: "block text-sm font-medium text-gray-700 mb-1" }, "Status do Equipamento:"),
+                      React.createElement('div', { className: "relative" },
+                        React.createElement('select', {
+                          id: "status",
+                          value: status,
+                          onChange: (e) => setStatus(e.target.value),
+                          className: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none pr-8 transition duration-150 ease-in-out",
+                          required: true,
+                          disabled: isLoading
+                        },
+                          React.createElement('option', { value: "ATIVO" }, "ATIVO"),
+                          React.createElement('option', { value: "INATIVO" }, "INATIVO")
+                        ),
+                        React.createElement(LucideIcon, { name: "ChevronDown", className: "h-5 w-5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" })
+                      )
                     ),
                     React.createElement('button', {
                       type: "submit",
@@ -1880,10 +1866,11 @@
                   setError(null); // Limpar erros anteriores
 
                   try {
-                    // Buscar todos os registros de transferência de filial
+                    // Buscar todos os registros de transferência de filial ativos
                     let queryBuilder = supabase
                       .from('trocasFilial')
-                      .select('*'); // Seleciona todas as colunas para exportação
+                      .select('*') // Seleciona todas as colunas para exportação
+                      .is('ending_date', null); // Filtrar apenas registros ativos para o dashboard
                 
                     // Usar allBranches que já foi carregado no useEffect anterior
                     // Criar um mapa de filial para responsável
@@ -1915,7 +1902,7 @@
                       );
                     }
 
-                    // Mapear tipo de equipamento e status para cada registro (incluindo novos campos)
+                    // Mapear tipo de equipamento para cada registro (incluindo novos campos)
                     const finalFilteredData = filteredTrocasFilial.map(registro => {
                         const equipment = allEquipment.find(eq => eq.plate === registro.plate);
                         return {
@@ -1923,8 +1910,7 @@
                             tipoEquipamento: equipment ? equipment.type : 'N/A',
                             modeloEquipamento: equipment ? equipment.model : 'N/A', // Adicionado
                             marcaEquipamento: equipment ? equipment.brand : 'N/A',   // Adicionado
-                            chassiEquipamento: equipment ? equipment.chassis : 'N/A', // Adicionado
-                            status: registro.ending_date === null ? 'ATIVO' : 'INATIVO' // Adicionado o status
+                            chassiEquipamento: equipment ? equipment.chassis : 'N/A' // Adicionado
                         };
                     }).filter(registro => {
                         // Aplicar filtro de tipo de equipamento após o mapeamento
@@ -2172,7 +2158,7 @@
                           React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Chassi"),
                           React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Tipo de Equipamento"),
                           React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Data de Alteração"),
-                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Status")
+                          React.createElement('th', { scope: "col", className: "px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider" }, "Status") // Adicionado Status
                         )
                       ),
                       React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
@@ -2194,7 +2180,7 @@
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.chassiEquipamento),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, registro.tipoEquipamento),
                               React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-500" }, formatDate(registro.executionDate)),
-                              React.createElement('td', { className: `px-6 py-4 whitespace-nowrap text-sm font-semibold ${registro.status === 'ATIVO' ? 'text-green-600' : 'text-red-600'}` }, registro.status)
+                              React.createElement('td', { className: `px-6 py-4 whitespace-nowrap text-sm font-semibold ${registro.status === 'ATIVO' ? 'text-green-600' : 'text-red-600'}` }, registro.status) // Exibir status
                             )
                           ))
                         )
@@ -2280,7 +2266,7 @@
                 }, [userId, showToast]);
 
                 const handleGoBack = () => {
-                    setCurrentPage('dashboard'); // Or 'emptyPanel' if you want to go to the initial empty page
+                    setCurrentPage('quickAccessMenu'); // Redirect to QuickAccessMenu
                 };
 
                 return (
@@ -2330,12 +2316,35 @@
                 );
             }
 
-            // Componente para a tela vazia inicial (agora com visual e a descrição)
-            function EmptyPanel() {
+            // Novo Componente: QuickAccessMenu (anteriormente EmptyPanel)
+            function QuickAccessMenu({ setCurrentPage }) {
               return (
                 React.createElement('div', { className: "flex flex-col items-center justify-center min-h-[calc(100vh-16rem)] bg-white p-6 rounded-xl shadow-lg text-center" },
-                  // Removido o h2 "SISTEMA DE GERENCIAMENTO"
-                  React.createElement('p', { className: "text-lg text-gray-700 mt-4 max-w-2xl leading-relaxed" }, "O SISTEMA DE GERENCIAMENTO é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações.")
+                  React.createElement('h2', { className: "text-3xl font-bold text-gray-800 mb-8" }, "Bem-vindo ao TERSYS!"),
+                  React.createElement('p', { className: "text-lg text-gray-700 mb-8 max-w-2xl leading-relaxed" }, "O SISTEMA DE GERENCIAMENTO é um aplicativo desenvolvido para controlar de forma prática e eficiente a troca de placas entre usinas. Ele permite registrar, rastrear e organizar as movimentações de forma centralizada, garantindo agilidade e segurança nas operações."),
+                  React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl" },
+                    React.createElement('button', {
+                      onClick: () => setCurrentPage('dashboard'),
+                      className: "flex flex-col items-center justify-center p-6 bg-blue-500 text-white rounded-xl shadow-md hover:bg-blue-600 transition duration-300 ease-in-out transform hover:scale-105 group"
+                    },
+                      React.createElement(LucideIcon, { name: "LayoutDashboard", className: "h-12 w-12 mb-3 text-blue-100 group-hover:text-white transition-colors" }),
+                      React.createElement('span', { className: "text-xl font-semibold" }, "Dashboard de Equipamentos")
+                    ),
+                    React.createElement('button', {
+                      onClick: () => setCurrentPage('outsourcingDistribution'),
+                      className: "flex flex-col items-center justify-center p-6 bg-green-500 text-white rounded-xl shadow-md hover:bg-green-600 transition duration-300 ease-in-out transform hover:scale-105 group"
+                    },
+                      React.createElement(LucideIcon, { name: "MapPin", className: "h-12 w-12 mb-3 text-green-100 group-hover:text-white transition-colors" }),
+                      React.createElement('span', { className: "text-xl font-semibold" }, "Distribuição de Terceirização")
+                    ),
+                    React.createElement('button', {
+                      onClick: () => setCurrentPage('branchTransfer'),
+                      className: "flex flex-col items-center justify-center p-6 bg-purple-500 text-white rounded-xl shadow-md hover:bg-purple-600 transition duration-300 ease-in-out transform hover:scale-105 group"
+                    },
+                      React.createElement(LucideIcon, { name: "ArrowLeftRight", className: "h-12 w-12 mb-3 text-purple-100 group-hover:text-white transition-colors" }),
+                      React.createElement('span', { className: "text-xl font-semibold" }, "Troca de Filial")
+                    )
+                  )
                 )
               );
             }
@@ -2347,7 +2356,7 @@
               const [userId, setUserId] = React.useState(localStorage.getItem('userId'));
               const [userRole, setUserRole] = React.useState(localStorage.getItem('userRole'));
               const [isAuthReady, setIsAuthReady] = React.useState(false);
-              const [currentPage, setCurrentPage] = React.useState('emptyPanel');
+              const [currentPage, setCurrentPage] = React.useState('quickAccessMenu'); // Alterado para 'quickAccessMenu'
               const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
               const [isCadastroOpen, setIsCadastroOpen] = React.useState(false);
               const [isOperacionalOpen, setIsOperacionalOpen] = React.useState(false);
@@ -2356,16 +2365,15 @@
               const [toastMessage, setToastMessage] = React.useState(null);
               const [toastType, setToastType] = React.useState(null);
 
-              // Memoizando as funções showToast e clearToast
-              const showToast = React.useCallback((message, type) => {
+              const showToast = (message, type) => {
                   setToastMessage(message);
                   setToastType(type);
-              }, []); // Empty dependency array means it's created once and never changes
+              };
 
-              const clearToast = React.useCallback(() => {
+              const clearToast = () => {
                   setToastMessage(null);
                   setToastType(null);
-              }, []); // Empty dependency array means it's created once and never changes
+              };
 
               // useEffect para verificar o localStorage na montagem do componente
               React.useEffect(() => {
@@ -2378,10 +2386,7 @@
                   // Se houver dados no localStorage, o usuário é considerado autenticado
                   // e podemos definir isAuthReady como true.
                   setIsAuthReady(true);
-                  // Opcional: Redirecionar para o dashboard ou uma página padrão após o refresh
-                  // if (currentPage === 'login') { // Evita redirecionar se já estiver em outra página
-                  //   setCurrentPage('dashboard');
-                  // }
+                  setCurrentPage('quickAccessMenu'); // Redireciona para o QuickAccessMenu após login persistido
                 } else {
                   // Se não houver dados no localStorage, o usuário não está autenticado
                   setIsAuthReady(true); // Indica que a verificação de autenticação inicial foi concluída
@@ -2393,7 +2398,7 @@
               const handleLogin = (role, username) => {
                 setUserRole(role);
                 setUserId(username); // Set userId to the logged-in username for data partitioning
-                setCurrentPage('emptyPanel');
+                setCurrentPage('quickAccessMenu'); // Alterado para 'quickAccessMenu'
                 showToast("Login realizado com sucesso!", "success");
               };
 
@@ -2598,13 +2603,13 @@
                     ),
 
                     React.createElement('div', { className: "max-w-full w-full" },
-                      currentPage === 'emptyPanel' && React.createElement(EmptyPanel, null),
+                      currentPage === 'quickAccessMenu' && React.createElement(QuickAccessMenu, { setCurrentPage: setCurrentPage }), // Renderiza QuickAccessMenu
                       currentPage === 'dashboard' && React.createElement(Dashboard, { userId: userId, showToast: showToast }),
                       currentPage === 'branchManagement' && userRole === 'administrador' && React.createElement(BranchManagement, { userId: userId, userRole: userRole, showToast: showToast }),
                       currentPage === 'equipmentManagement' && userRole === 'administrador' && React.createElement(EquipmentManagement, { userId: userId, showToast: showToast }),
                       currentPage === 'userManagement' && userRole === 'administrador' && React.createElement(UserManagement, { userId: userId, showToast: showToast }),
                       currentPage === 'outsourcingDistribution' && React.createElement(OutsourcingDistribution, { userId: userId, showToast: showToast, setCurrentPage: setCurrentPage }),
-                      currentPage === 'branchTransfer' && React.createElement(BranchTransfer, { userId: userId, setCurrentPage: setCurrentPage, showToast: showToast }), // Adicionada vírgula aqui
+                      currentPage === 'branchTransfer' && React.createElement(BranchTransfer, { userId: userId, setCurrentPage: setCurrentPage, showToast: showToast }),
                       toastMessage && React.createElement(Toast, { message: toastMessage, type: toastType, onClose: clearToast })
                     )
                   )
